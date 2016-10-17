@@ -45,6 +45,10 @@ int64_t		 db_sess_new(struct kreq *,
 			int64_t, const struct user *);
 struct user	*db_sess_resolve(struct kreq *, int64_t, int64_t);
 
+void		 json_emptydoc(struct kreq *);
+void	 	 json_putuser(struct kjsonreq *, const struct user *);
+void		 json_putuserdata(struct kjsonreq *, const struct user *);
+
 __END_DECLS
 
 #endif

@@ -31,13 +31,18 @@ Begin by reading the [GNUmakefile](GNUmakefile): it will list all of the
 variables you'll need to set for your installation.  For running and
 testing on many systems, I set the defaults and override these values
 with a local GNUmakefile.local (source during compilation) on
-non-production systems.
+non-production systems.  The default values assume an OpenBSD system
+with a stock install.
 
 Then read the [main.c](main.c) file, which interacts with the database
 and orchestrates JSON responses.
 
 Finally, read [index.xml](index.xml) and [index.js](index.js), both of
 which drive the JSON backend.  It's all super-simple and self-contained.
+
+The current [GNUmakefile](GNUmakefile) rules are as follows.  Remember
+to use `gmake` if you're on BSD system where GNU make is installed as a
+third-party utility.
 
 Run `make` to compile the sources.
 

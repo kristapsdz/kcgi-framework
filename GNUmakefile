@@ -58,7 +58,7 @@ APIDOCS = /var/www/htdocs/api-docs
 sinclude GNUmakefile.local
 
 DATABASE = $(TARGET).db
-OBJS	 = main.o db.o
+OBJS	 = db.o json.o main.o
 HTMLS	 = index.html
 JSMINS	 = index.min.js
 CFLAGS	+= -g -W -Wall -O2 $(SECURE)

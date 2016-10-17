@@ -94,44 +94,6 @@ http_open(struct kreq *r, enum khttp code)
 	khttp_body(r);
 }
 
-
-/*
- * Emit an empty JSON document.
- */
-static void
-json_emptydoc(struct kreq *r)
-{
-	struct kjsonreq	 req;
-
-	kjson_open(&req, r);
-	kjson_obj_open(&req);
-	kjson_obj_close(&req);
-	kjson_close(&req);
-}
-
-/*
- * Formats a user object's members as JSON members.
- */
-static void
-json_putuserdata(struct kjsonreq *req, const struct user *u)
-{
-
-	kjson_putstringp(req, "email", u->email);
-	kjson_putintp(req, "id", u->id);
-}
-
-/*
- * Formats a user object as a JSON object.
- */
-static void
-json_putuser(struct kjsonreq *req, const struct user *u)
-{
-
-	kjson_objp_open(req, "user");
-	json_putuserdata(req, u);
-	kjson_obj_close(req);
-}
-
 /*
  * Process an e-mail address change.
  * Raises HTTP 400 if not all fields exist or if the e-mail address is
