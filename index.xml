@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+		<meta charset="utf-8" /> 
+		<title>title</title>
+		<style>
+			.hide { display: none; }
+		</style>
+		<script src="@HTURI@/index.min.js"></script>
+	</head>
+	<body>
+		<section id="loading">
+			Loading...
+		</section>
+		<section id="loaded">
+			<section id="login" class="hide">
+				<form class="styled" id="loginform" method="post" action="@CGIURI@/login.json">
+					<p class="error error400 hide">
+						Bad user and/or password.  Try again!
+					</p>
+					<fieldset>
+						<div>
+							<label for="loginform-email">E-mail address</label>
+							<div><input id="loginform-email" type="email" name="email" required="required" /></div>
+						</div>
+						<div>
+							<label for="loginform-password">Password</label>
+							<div><input id="loginform-password" type="password" name="pass" required="required" /></div>
+						</div>
+					</fieldset>
+					<div class="buttons">
+						<button type="submit" class="submit">
+							Login
+						</button>
+						<button type="button" disabled="disabled" class="hide pending">
+							Logging in...
+						</button>
+					</div>
+				</form>
+			</section>
+			<section id="loggedin" class="hide">
+				<p>
+					You're logged in, <span class="user-email"></span>.
+				</p>
+				<div id="usermod">
+					<form id="modpassform" method="post" action="@CGIURI@/modpass.json">
+						<fieldset>
+							<div>
+								<label>Password</label>
+								<div><input type="password" placeholder="Login password" name="pass" required="required" /></div>
+							</div>
+						</fieldset>
+						<div class="buttons">
+							<button type="submit" class="submit">
+								<i class="fa fa-fw fa-lock"></i>
+								Change
+							</button>
+							<button type="button" disabled="disabled" class="pending hide">
+								<i class="fa fa-fw fa-pulse fa-spinner"></i>
+								Changing...
+							</button>
+						</div>
+					</form>
+					<form id="modemailform" method="post" action="@CGIURI@/modemail.json">
+						<fieldset>
+							<div>
+								<label>E-mail</label>
+								<div><input type="email" id="user-input-email" name="email" required="required" /></div>
+							</div>
+						</fieldset>
+						<div class="buttons">
+							<button type="submit" class="submit">
+								<i class="fa fa-fw fa-envelope-o"></i>
+								Change
+							</button>
+							<button type="button" disabled="disabled" class="hide pending">
+								<i class="fa fa-fw fa-pulse fa-spinner"></i>
+								Changing...
+							</button>
+						</div>
+					</form>
+				</div>
+			</section>
+		</section>
+	</body>
+</html>
