@@ -1,4 +1,4 @@
-.SUFFIXES: .html .in.xml .xml .js .min.js .db .sql
+.SUFFIXES: .html .in.xml .xml .js .min.js .db .sql .png
 
 # The default installation is for a default-install OpenBSD box that's
 # running HTTPS (only).
@@ -39,15 +39,14 @@ RDDIR = /data
 # See TARGET.
 CGINAME = yourprog
 
-# This is the name of the binary we're going to build.
-# It differs from CGINAME in that it's the install source.
-TARGET = yourprog
-
-DATABASE = yourprog.db
-
 # URL location (filename) of CGI script.
 # See CGIBIN and CGINAME.
 CGIURI = /cgi-bin/$(CGINAME)
+
+# This is the name of the binary we're going to build.
+# It differs from CGINAME in that it's the install source.
+# See CGINAME.
+TARGET = yourprog
 
 # If on an HTTPS-only installation, should be "-DSECURE".
 SECURE = -DSECURE
@@ -58,7 +57,8 @@ APIDOCS = /var/www/htdocs/api-docs
 # Override these with an optional local file.
 sinclude GNUmakefile.local
 
-OBJS	 = main.o
+DATABASE = $(TARGET).db
+OBJS	 = main.o db.o
 HTMLS	 = index.html
 JSMINS	 = index.min.js
 CFLAGS	+= -g -W -Wall -O2 $(SECURE)
@@ -96,11 +96,11 @@ clean:
 	rm -f swagger.json schema.html schema.png
 	rm -rf $(TARGET).dSYM
 
-.sql.html:
-	sqliteconvert $< >$@
+schema.html: $(TARGET).sql
+	sqliteconvert $(TARGET).sql >$@
 
-.sql.png:
-	sqliteconvert -i $< >$@
+schema.png: $(TARGET).sql
+	sqliteconvert -i $(TARGET).sql >$@
 
 .sql.db:
 	@rm -f $@
@@ -114,8 +114,10 @@ clean:
 $(TARGET): $(OBJS)
 	$(CC) $(STATIC) -o $@ $(OBJS) $(LDFLAGS) -lkcgi -lkcgijson -lz -lksql -lsqlite3
 
+$(OBJS): extern.h
+
 swagger.json: swagger.in.json
 	@rm -f $@
-	sed -e "s!@VERSION@!$(VERSION)!g" swagger.in.json >$@
+	sed -e "s!@VERSION@!$(VERSION)!g" -e "s!@TARGET@!$(TARGET)!g" swagger.in.json >$@
 	@chmod 400 $@
 

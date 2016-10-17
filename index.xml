@@ -44,7 +44,7 @@
 					You're logged in, <span class="user-email"></span>.
 				</p>
 				<div id="usermod">
-					<form id="modpassform" method="post" action="@CGIURI@/modpass.json">
+					<form id="modpassform" method="post" action="@CGIURI@/usermodpass.json">
 						<fieldset>
 							<div>
 								<label>Password</label>
@@ -53,16 +53,14 @@
 						</fieldset>
 						<div class="buttons">
 							<button type="submit" class="submit">
-								<i class="fa fa-fw fa-lock"></i>
 								Change
 							</button>
 							<button type="button" disabled="disabled" class="pending hide">
-								<i class="fa fa-fw fa-pulse fa-spinner"></i>
 								Changing...
 							</button>
 						</div>
 					</form>
-					<form id="modemailform" method="post" action="@CGIURI@/modemail.json">
+					<form id="modemailform" method="post" action="@CGIURI@/usermodemail.json">
 						<fieldset>
 							<div>
 								<label>E-mail</label>
@@ -71,16 +69,24 @@
 						</fieldset>
 						<div class="buttons">
 							<button type="submit" class="submit">
-								<i class="fa fa-fw fa-envelope-o"></i>
 								Change
 							</button>
 							<button type="button" disabled="disabled" class="hide pending">
-								<i class="fa fa-fw fa-pulse fa-spinner"></i>
 								Changing...
 							</button>
 						</div>
 					</form>
 				</div>
+				<form id="logoutform" method="post" action="@CGIURI@/logout.json">
+					<div class="buttons">
+						<button type="submit" class="submit">
+							Logout
+						</button>
+						<button type="button" disabled="disabled" class="pending hide">
+							Logging out...
+						</button>
+					</div>
+				</form>
 			</section>
 		</section>
 	</body>

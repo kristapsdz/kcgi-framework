@@ -25,16 +25,8 @@
 
 #include <kcgi.h>
 #include <kcgijson.h>
-#include <ksql.h>
 
-/*
- * A user.
- * See the user table in the database schema.
- */
-struct	user {
-	char		*email;
-	int64_t		 id;
-};
+#include "extern.h"
 
 /*
  * Start with five pages.
@@ -56,41 +48,6 @@ enum	key {
 	KEY_SESSTOK,
 	KEY_SESSID,
 	KEY__MAX
-};
-
-enum	stmt {
-	STMT_SESS_DEL,
-	STMT_SESS_GET,
-	STMT_SESS_NEW,
-	STMT_USER_GET,
-	STMT_USER_LOOKUP,
-	STMT_USER_MOD_EMAIL,
-	STMT_USER_MOD_HASH,
-	STMT__MAX
-};
-
-/*
- * The fields we'll extract (in general) from the user table.
- */
-#define	USER	"user.id,user.email"
-
-static	const char *const stmts[STMT__MAX] = {
-	/* STMT_SESS_DEL */
-	"DELETE FROM sess WHERE id=? AND token=? AND userid=?",
-	/* STMT_SESS_GET */
-	"SELECT " USER " FROM sess "
-		"INNER JOIN user ON user.id=sess.userid "
-		"WHERE sess.id=? AND sess.token=?",
-	/* STMT_SESS_NEW */
-	"INSERT INTO sess (token,userid) VALUES (?,?)",
-	/* STMT_USER_GET */
-	"SELECT " USER " FROM user WHERE id=?",
-	/* STMT_USER_LOOKUP */
-	"SELECT " USER ",hash FROM user WHERE email=?",
-	/* STMT_USER_MOD_EMAIL */
-	"UPDATE user SET email=? WHERE id=?",
-	/* STMT_USER_MOD_HASH */
-	"UPDATE user SET hash=? WHERE id=?",
 };
 
 static const struct kvalid keys[KEY__MAX] = {
@@ -137,201 +94,19 @@ http_open(struct kreq *r, enum khttp code)
 	khttp_body(r);
 }
 
+
 /*
- * Free the contents of the "struct user".
+ * Emit an empty JSON document.
  */
 static void
-db_user_unfill(struct user *p)
+json_emptydoc(struct kreq *r)
 {
+	struct kjsonreq	 req;
 
-	if (NULL == p)
-		return;
-	free(p->email);
-}
-
-/*
- * Free the object of the "struct user".
- */
-static void
-db_user_free(struct user *p)
-{
-
-	db_user_unfill(p);
-	free(p);
-}
-
-/*
- * Zero and fill the "struct user" from the database.
- * Sets "pos", if non-NULL, to be the current index in the database
- * columns using the USER column definition macro.
- */
-static void
-db_user_fill(struct user *p, struct ksqlstmt *stmt, size_t *pos)
-{
-	size_t	 i = 0;
-
-	if (NULL == pos)
-		pos = &i;
-
-	memset(p, 0, sizeof(struct user));
-	p->id = ksql_stmt_int(stmt, (*pos)++);
-	p->email = kstrdup(ksql_stmt_str(stmt, (*pos)++));
-}
-
-/*
- * Create a new user session with a random token.
- * Returns the identifier of the new session.
- */
-static int64_t
-db_sess_new(struct kreq *r, int64_t token, const struct user *u)
-{
-	struct ksqlstmt	*stmt;
-	int64_t		 id;
-
-	ksql_stmt_alloc(r->arg, &stmt, 
-		stmts[STMT_SESS_NEW], 
-		STMT_SESS_NEW);
-	ksql_bind_int(stmt, 0, token);
-	ksql_bind_int(stmt, 1, u->id);
-	ksql_stmt_step(stmt);
-	ksql_stmt_free(stmt);
-	ksql_lastid(r->arg, &id);
-	kutil_info(r, u->email, "new session");
-	return(id);
-}
-
-/*
- * Look up a given user with an e-mail and password.
- * The password is hashed in a system-dependent way.
- * Returns the user object or NULL if no user was found or the password
- * was incorrect.
- */
-static struct user *
-db_user_find(struct ksql *sql, const char *email, const char *pass)
-{
-	struct ksqlstmt	*stmt;
-	int		 rc;
-	size_t		 i;
-	const char	*hash;
-	struct user	*user;
-
-	ksql_stmt_alloc(sql, &stmt, 
-		stmts[STMT_USER_LOOKUP], 
-		STMT_USER_LOOKUP);
-	ksql_bind_str(stmt, 0, email);
-	if (KSQL_ROW != ksql_stmt_step(stmt)) {
-		ksql_stmt_free(stmt);
-		return(NULL);
-	}
-	i = 0;
-	user = kmalloc(sizeof(struct user));
-	db_user_fill(user, stmt, &i);
-	hash = ksql_stmt_str(stmt, i);
-#ifdef __OpenBSD__
-	rc = crypt_checkpass(pass, hash) < 0 ? 0 : 1;
-#else
-	rc = 0 == strcmp(hash, pass);
-#endif
-	ksql_stmt_free(stmt);
-	if (0 == rc) {
-		db_user_free(user);
-		user = NULL;
-	}
-	return(user);
-}
-
-/*
- * Resolve a user from session information.
- * Returns the user object or NULL if no session was found.
- */
-static struct user *
-db_sess_resolve(struct kreq *r, int64_t id, int64_t token)
-{
-	struct ksqlstmt	*stmt;
-	struct user	*u = NULL;
-
-	if (-1 == id || -1 == token)
-		return(NULL);
-
-	ksql_stmt_alloc(r->arg, &stmt, 
-		stmts[STMT_SESS_GET], 
-		STMT_SESS_GET);
-	ksql_bind_int(stmt, 0, id);
-	ksql_bind_int(stmt, 1, token);
-	if (KSQL_ROW == ksql_stmt_step(stmt)) {
-		u = kmalloc(sizeof(struct user));
-		db_user_fill(u, stmt, NULL);
-	}
-	ksql_stmt_free(stmt);
-	return(u);
-}
-
-/*
- * Deletes the session (if any) associated with the given id and token,
- * and managed by the given user.
- */
-static void
-db_sess_del(struct kreq *r, 
-	const struct user *u, int64_t id, int64_t token)
-{
-	struct ksqlstmt	*stmt;
-
-	ksql_stmt_alloc(r->arg, &stmt, 
-		stmts[STMT_SESS_DEL], 
-		STMT_SESS_DEL);
-	ksql_bind_int(stmt, 0, id);
-	ksql_bind_int(stmt, 1, token);
-	ksql_bind_int(stmt, 2, u->id);
-	ksql_stmt_step(stmt);
-	ksql_stmt_free(stmt);
-	kutil_info(r, u->email, "session deleted");
-}
-
-/*
- * Modify a user's password.
- */
-static void
-db_user_mod_pass(struct kreq *r, 
-	const struct user *u, const char *pass)
-{
-	struct ksqlstmt	*stmt;
-	char		 hash[64];
-
-#ifdef __OpenBSD__
-	crypt_newhash(pass, "blowfish,a", hash, sizeof(hash));
-#else
-	strlcpy(hash, pass, sizeof(hash));
-#endif
-	ksql_stmt_alloc(r->arg, &stmt,
-		stmts[STMT_USER_MOD_HASH],
-		STMT_USER_MOD_HASH);
-	ksql_bind_str(stmt, 0, hash);
-	ksql_bind_int(stmt, 1, u->id);
-	ksql_stmt_step(stmt);
-	ksql_stmt_free(stmt);
-	kutil_info(r, u->email, "changed password");
-}
-
-/*
- * Modify a user's e-mail.
- */
-static int
-db_user_mod_email(struct kreq *r, 
-	const struct user *u, const char *email)
-{
-	struct ksqlstmt	*stmt;
-	enum ksqlc	 c;
-
-	ksql_stmt_alloc(r->arg, &stmt, 
-		stmts[STMT_USER_MOD_EMAIL], 
-		STMT_USER_MOD_EMAIL);
-	ksql_bind_str(stmt, 0, email);
-	ksql_bind_int(stmt, 1, u->id);
-	c = ksql_stmt_cstep(stmt);
-	ksql_stmt_free(stmt);
-	if (KSQL_CONSTRAINT != c)
-		kutil_info(r, u->email, "changed email: %s", email);
-	return(KSQL_CONSTRAINT != c);
+	kjson_open(&req, r);
+	kjson_obj_open(&req);
+	kjson_obj_close(&req);
+	kjson_close(&req);
 }
 
 /*
@@ -374,6 +149,8 @@ sendmodemail(struct kreq *r, const struct user *u)
 		http_open(r, rc ? KHTTP_200 : KHTTP_400);
 	} else
 		http_open(r, KHTTP_400);
+
+	json_emptydoc(r);
 }
 
 /*
@@ -391,6 +168,8 @@ sendmodpass(struct kreq *r, const struct user *u)
 		db_user_mod_pass(r, u, kp->parsed.s);
 	} else
 		http_open(r, KHTTP_400);
+
+	json_emptydoc(r);
 }
 
 /*
@@ -410,6 +189,12 @@ sendindex(struct kreq *r, const struct user *u)
 	kjson_close(&req);
 }
 
+/*
+ * Log in the given user by their e-mail and password.
+ * Creates a new session.
+ * Returns HTTP 400 if missing parameters, bad user, bad password, etc.
+ * Returns HTTP 200 with empty JSON body and cookie headers.
+ */
 static void
 sendlogin(struct kreq *r)
 {
@@ -422,14 +207,15 @@ sendlogin(struct kreq *r)
 	if (NULL == (kpi = r->fieldmap[KEY_EMAIL]) ||
 	    NULL == (kpp = r->fieldmap[KEY_PASS])) {
 		http_open(r, KHTTP_400);
+		json_emptydoc(r);
 		return;
 	}
 
-	u = db_user_find(r->arg, 
-		kpi->parsed.s, kpp->parsed.s);
+	u = db_user_find(r, kpi->parsed.s, kpp->parsed.s);
 
 	if (NULL == u) {
 		http_open(r, KHTTP_400);
+		json_emptydoc(r);
 		return;
 	} 
 
@@ -452,10 +238,15 @@ sendlogin(struct kreq *r)
 		"%s=%" PRId64 ";%s HttpOnly; path=/; expires=%s", 
 		keys[KEY_SESSID].name, sid, secure, buf);
 	khttp_body(r);
-
+	json_emptydoc(r);
 	db_user_free(u);
 }
 
+/*
+ * Log out the given user by deleting the user's session (if found) and
+ * invalidating the client-side session.
+ * Returns HTTP 200 with empty JSON body.
+ */
 static void
 sendlogout(struct kreq *r, const struct user *u)
 {
@@ -468,7 +259,6 @@ sendlogout(struct kreq *r, const struct user *u)
 #else
 	secure = "";
 #endif
-
 	http_alloc(r, KHTTP_200);
 	khttp_head(r, kresps[KRESP_SET_COOKIE],
 		"%s=; path=/;%s HttpOnly; expires=%s", 
@@ -477,6 +267,7 @@ sendlogout(struct kreq *r, const struct user *u)
 		"%s=; path=/;%s HttpOnly; expires=%s", 
 		keys[KEY_SESSID].name, secure, buf);
 	khttp_body(r);
+	json_emptydoc(r);
 	db_sess_del(r, u,
 		r->cookiemap[KEY_SESSID]->parsed.i, 
 		r->cookiemap[KEY_SESSTOK]->parsed.i);
@@ -487,22 +278,11 @@ main(void)
 {
 	struct kreq	 r;
 	enum kcgi_err	 er;
-	struct ksql	*sql;
-	struct ksqlcfg	 cfg;
 	struct user	*u;
 
 	/* Log into a separate logfile (not system log). */
 
 	kutil_openlog(LOGFILE);
-
-	/* Configure normal database except with foreign keys. */
-
-	memset(&cfg, 0, sizeof(struct ksqlcfg));
-	cfg.flags = KSQL_EXIT_ON_ERR |
-		    KSQL_FOREIGN_KEYS |
-		    KSQL_SAFE_EXIT;
-	cfg.err = ksqlitemsg;
-	cfg.dberr = ksqlitedbmsg;
 
 	/* Actually parse HTTP document. */
 
@@ -540,16 +320,12 @@ main(void)
 		return(EXIT_SUCCESS);
 	}
 
-	/* Allocate database. */
-
-	if (NULL == (sql = ksql_alloc(&cfg))) {
+	if ( ! db_open(&r, DATADIR "/" DATABASE)) {
 		http_open(&r, KHTTP_500);
+		json_emptydoc(&r);
 		khttp_free(&r);
 		return(EXIT_SUCCESS);
-	} 
-
-	ksql_open(sql, DATADIR "/" DATABASE);
-	r.arg = sql;
+	}
 
 	/* 
 	 * Assume we're logging in with a session and grab the session
@@ -567,8 +343,9 @@ main(void)
 
 	if (PAGE_LOGIN != r.page && NULL == u) {
 		http_open(&r, KHTTP_403);
+		json_emptydoc(&r);
+		db_close(&r);
 		khttp_free(&r);
-		ksql_free(sql);
 		return(EXIT_SUCCESS);
 	}
 
@@ -592,7 +369,7 @@ main(void)
 		abort();
 	}
 
+	db_close(&r);
 	khttp_free(&r);
-	ksql_free(sql);
 	return(EXIT_SUCCESS);
 }

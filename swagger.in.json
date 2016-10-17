@@ -1,16 +1,15 @@
 {
 	"swagger": "2.0",
 	"info": {
-		"title": "dblg",
-		"description": "dynamic [simple] on-line blog utility",
+		"title": "@TARGET@",
+		"description": "@TARGET@",
 		"license": {
 			"name": "ISC license",
 			"url": "https://opensource.org/licenses/ISC"
 		},
 		"contact": {
-			"name": "Kristaps Dzonsons",
-			"email": "kristaps@bsd.lv",
-			"url": "https://github.com/kristapsdz/dblg"
+			"name": "yourname",
+			"email": "you@localhost"
 		},
 		"version": "@VERSION@"
 	},
@@ -28,24 +27,23 @@
 						"required": true
 					},
 					{
-						"name": "sesscookie",
+						"name": "sesstok",
 						"in": "cookie",
-						"description": "Session cookie",
+						"description": "Session token",
 						"type": "integer",
 						"format": "int64",
 						"required": true
 					}
 				],
-				"produces": [
-					"application/json"
-				],
+				"produces": [ "application/json" ],
 				"responses": {
+					"403": {
+						"description": "User not logged in or bad session",
+						"schema": { "$ref": "#/definitions/empty" }
+					},
 					"200": {
 						"description": "User has been deauthenticated",
-						"schema": {
-							"type": "object",
-							"properties": { }
-						}
+						"schema": { "$ref": "#/definitions/empty" }
 					}
 				}
 			}
@@ -69,26 +67,18 @@
 						"required": true
 					}
 				],
-				"produces": [
-					"application/json"
-				],
+				"produces": [ "application/json" ],
 				"responses": {
 					"400": {
 						"description": "User not found (or disabled) or bad password",
-						"schema": {
-							"type": "object",
-							"properties": { }
-						}
+						"schema": { "$ref": "#/definitions/empty" }
 					},
 					"200": {
-						"description": "User and administrative information; and, if applicable, requested entry.",
-						"schema": {
-							"type": "object",
-							"properties": { }
-						},
+						"description": "User was logged in",
+						"schema": { "$ref": "#/definitions/empty" },
 						"headers": {
 							"Set-Cookie": {
-								"description": "Key-value pairs for the authentication identifier and cookie",
+								"description": "Key-value pairs for the authentication identifier and token",
 								"type": "string"
 							}
 						}
@@ -98,16 +88,8 @@
 		},
 		"/index.json": {
 			"get": {
-				"description": "Blog editor interface",
+				"description": "Logged-in user information",
 				"parameters": [
-					{
-						"name": "entryid",
-						"in": "query",
-						"description": "Pending entry identifier",
-						"type": "integer",
-						"format": "int64",
-						"required": false
-					},
 					{
 						"name": "sessid",
 						"in": "cookie",
@@ -117,185 +99,50 @@
 						"required": false
 					},
 					{
-						"name": "sesscookie",
+						"name": "sesstok",
 						"in": "cookie",
-						"description": "Session cookie",
+						"description": "Session token",
 						"type": "integer",
 						"format": "int64",
 						"required": false
 					}
 				],
-				"produces": [
-					"application/json"
-				],
+				"produces": [ "application/json" ],
 				"responses": {
 					"403": {
 						"description": "Session invalid or user disabled",
-						"schema": {
-							"type": "object",
-							"properties": { }
-						}
+						"schema": { "$ref": "#/definitions/empty" }
 					},
 					"200": {
-						"description": "User and administrative information; and, if applicable, requested entry.",
-						"schema": {
-							"type": "object",
-							"properties": {
-								"user": {
-									"description": "Currently logged-in user",
-									"$ref": "#/definitions/user"
-								},
-								"entry": {
-									"description": "If entryid was specified, the resulting entry (or null)",
-									"$ref": "#/definitions/entry"
-								},
-								"pending": {
-									"type": "array",
-									"description": "List of pending entries",
-									"items": {
-										"$ref": "#/definitions/entry"
-									}
-								},
-								"users": {
-									"type": "array",
-									"description": "List of all users (only if an administrator, else zero-length)",
-									"items": {
-										"$ref": "#/definitions/user"
-									}
-								}
-							},
-							"required": [ "user", "users", "pending" ]
-						}
+						"description": "User information",
+						"schema": { "$ref": "#/definitions/user" }
 					}
 				}
 			}
 		}
 	},
 	"definitions": {
-		"entry": {
-			"description": "A public or private dblg entry",
+		"empty": {
+			"description": "An empty JSON document",
 			"type": "object",
-			"properties": {
-				"lang": {
-					"description": "Language of entry or empty string",
-					"type": "string"
-				},
-				"attrs": {
-					"description": "Entry attributes",
-					"type": "object",
-					"properties": {
-						"pending": {
-							"description": "The entry is pending (private)",
-							"type": "boolean"
-						}
-					}
-				},
-				"coords": {
-					"description": "Coordinates at the time of editing",
-					"type": "object",
-					"properties": {
-						"lng": {
-							"description": "Longitude in decimal degrees",
-							"type": "double"
-						},
-						"lat": {
-							"description": "Latitude in decimal degrees",
-							"type": "double"
-						}
-					},
-					"required": [ "lat", "lng" ]
-				},
-				"title": {
-					"description": "Entry title (may be zero length only if not yet published)",
-					"type": "string"
-				},
-				"content": {
-					"description": "Content (may be zero length only if not yet published)",
-					"type": "string"
-				},
-				"id": {
-					"description": "Unique identifier",
-					"type": "integer"
-				},
-				"mtime": {
-					"description": "Last modified time (UNIX epoch)",
-					"type": "integer"
-				},
-				"ctime": {
-					"description": "Creation time (UNIX epoch)",
-					"type": "integer"
-				}
-			},
-			"required": [ "title", "content", "mtime", "ctime", "id" ]
+			"properties": { }
 		},
 		"user": {
-			"description": "A user for a dblg installation",
+			"description": "A user",
 			"type": "object",
 			"properties": {
-				"name": {
-					"description": "Public name",
-					"type": "string"
-				},
 				"email": {
 					"description": "Public e-mail address (and system identifier)",
 					"type": "string"
 				},
-				"link": {
-					"description": "Public site address (relative or absolute) or an empty string",
-					"type": "string"
-				},
-				"lang": {
-					"description": "Default IETF language tag for user's entries or an empty string",
-					"type": "string"
-				},
 				"id": {
 					"description": "Unique numeric identifier",
-					"type": "string"
-				},
-				"cloud": {
-					"description": "Cloud specification (only for logged-in users looking at their own user object, else null)",
-					"type": "object",
-					"properties": {
-						"set": {
-							"description": "Whether all cloud values have been set",
-							"type": "boolean"
-						},
-						"path": {
-							"description": "Namespace (directory) of uploaded images or empty string",
-							"type": "string"
-						},
-						"name": {
-							"description": "Name of cloud account or empty string",
-							"type": "string"
-						},
-						"key": {
-							"description": "API key (public portion) or empty string",
-							"type": "string"
-						},
-						"secret": {
-							"description": "API secret (private portion) or empty string",
-							"type": "string"
-						}
-					},
-					"required": ["set", "path", "name", "key", "secret"]
-				},
-				"attrs": {
-					"description": "User attributes",
-					"type": "object",
-					"properties": {
-						"admin": {
-							"description": "Whether the user has administrator rights",
-							"type": "boolean"
-						},
-						"disabled": {
-							"description": "Whether the user has been disabled (cannot log in)",
-							"type": "boolean"
-						}
-					},
-					"required": ["admin", "disabled"]
+					"type": "integer",
+					"format": "int64"
+
 				}
 			},
-			"required": ["name", "email", "link", "id", "attrs"]
+			"required": ["email", "id"]
 		}
 	}
 }
