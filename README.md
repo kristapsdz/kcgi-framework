@@ -6,12 +6,16 @@ kcgi-framework is a set of files for starting a
 [ksql](https://kristaps.bsd.lv/ksql).
 
 The system, as is, minimally implements logging in and logging out over a
-session-based, RESTful JSON API.  It has the following features:
+session-based, RESTful JSON API.  It has lots of documentation:
 
 - initial database documentation via
   [sqliteconvert](https://kristaps.bsd.lv/sqliteconvert)
 - RESTful documentation via [Swagger](https://swagger.io)
 - well-documented C and JS source code
+
+The existing code tries to follow best practises for all elements of the
+stack: clean, secure C code that's logically separated, HTML and
+JavaScript that are well-formed and satisfy CSP policies, and so on.
 
 You'll only use this repository once as a primer for your project.  It's
 not something that's installed.  I use this to quickly get started on a
@@ -34,8 +38,11 @@ with a local GNUmakefile.local (source during compilation) on
 non-production systems.  The default values assume an OpenBSD system
 with a stock install.
 
-Then read the [main.c](main.c) file, which interacts with the database
-and orchestrates JSON responses.
+Then read the [main.c](main.c), [json.c](json.c), [db.c](db.c), and
+[extern.h](extern.h) files.  These orchestrate the HTTP response, output
+JSON, and process the database, respectively.  I'll usually keep these
+files on their own, and often put specific paths (e.g., index.json) into
+its own file as well.
 
 Finally, read [index.xml](index.xml) and [index.js](index.js), both of
 which drive the JSON backend.  It's all super-simple and self-contained.
