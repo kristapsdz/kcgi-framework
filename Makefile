@@ -25,6 +25,7 @@ DATADIR = /var/www/data
 # Web-server relative location of system log file.
 # This will have all logging messages by the system.
 LOGFILE = /logs/system.log
+LOGFFILE = /var/www/logs/system.log
 
 # Link options.
 # If on a static architecture, STATIC is -static; otherwise empty.
@@ -50,12 +51,12 @@ APIDOCS = /var/www/htdocs/api-docs
 # Override these with an optional local file.
 sinclude Makefile.local
 
-OBJS	 = compats.o db.o json.o valids.o main.o
-HTMLS	 = index.html
-JSMINS	 = index.min.js
-CFLAGS	+= -DLOGFILE=\"$(LOGFILE)\"
-CFLAGS	+= -DDATADIR=\"$(RDDIR)\"
-VERSION	 = 0.0.2
+OBJS		 = compats.o db.o json.o valids.o main.o
+HTMLS		 = index.html
+JSMINS		 = index.min.js
+CPPFLAGS	+= -DLOGFILE=\"$(LOGFILE)\"
+CPPFLAGS	+= -DDATADIR=\"$(RDDIR)\"
+VERSION		 = 0.0.2
 
 all: yourprog yourprog.db $(HTMLS) $(JSMINS)
 
@@ -71,12 +72,12 @@ installapi: api
 
 updatecgi: all
 	mkdir -p $(CGIBIN)
-	$(INSTALL_PROG) yourprog $(CGIBIN)
+	$(INSTALL_PROGRAM) yourprog $(CGIBIN)
 
 installcgi: updatecgi
 	mkdir -p $(DATADIR)
 	rm -f $(DATADIR)/yourprog.db
-	$(INSTALL_DATA) yourprog.db $(DATADIR)
+	install -m 666 yourprog.db $(DATADIR)
 	chmod 0777 $(DATADIR)
 
 clean:

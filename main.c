@@ -1,6 +1,6 @@
 /*	$Id$ */
 /*
- * Copyright (c) 2016 Kristaps Dzonsons <kristaps@bsd.lv>
+ * Copyright (c) 2016, 2018 Kristaps Dzonsons <kristaps@bsd.lv>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -204,14 +204,13 @@ sendlogin(struct kreq *r)
 #else
 	secure = "";
 #endif
-	khttp_head(r, kresps[KRESP_STATUS], 
-		"%s", khttps[KHTTP_200]);
 	khttp_head(r, kresps[KRESP_SET_COOKIE],
 		"%s=%" PRId64 ";%s HttpOnly; path=/; expires=%s", 
 		keys[KEY_SESSTOK].name, token, secure, buf);
 	khttp_head(r, kresps[KRESP_SET_COOKIE],
 		"%s=%" PRId64 ";%s HttpOnly; path=/; expires=%s", 
 		keys[KEY_SESSID].name, sid, secure, buf);
+	http_open(r, KHTTP_200);
 	khttp_body(r);
 	json_emptydoc(r);
 	db_user_free(u);
@@ -253,27 +252,22 @@ main(void)
 	enum kcgi_err	 er;
 	struct sess	*s;
 
-	/* Log into a separate logfile (not system log). */
-
 	kutil_openlog(LOGFILE);
 
-	/* Actually parse HTTP document. */
+#if HAVE_PLEDGE
+	if (-1 == pledge("stdio rpath cpath wpath flock fattr proc", NULL)) {
+		kutil_warn(NULL, NULL, "pledge");
+		return EXIT_FAILURE;
+	}
+#endif
 
 	er = khttp_parse(&r, keys, KEY__MAX, 
 		pages, PAGE__MAX, PAGE_INDEX);
 
 	if (KCGI_OK != er) {
-		fprintf(stderr, "HTTP parse error: %d\n", er);
-		return(EXIT_FAILURE);
+		kutil_warnx(NULL, NULL, "%s", kcgi_strerror(er));
+		return EXIT_FAILURE;
 	}
-
-#if HAVE_PLEDGE
-	if (-1 == pledge("stdio rpath cpath wpath flock fattr", NULL)) {
-		kutil_warn(&r, NULL, "pledge");
-		khttp_free(&r);
-		return(EXIT_FAILURE);
-	}
-#endif
 
 	/*
 	 * Front line of defence: make sure we're a proper method, make
@@ -284,21 +278,30 @@ main(void)
 	    KMETHOD_POST != r.method) {
 		http_open(&r, KHTTP_405);
 		khttp_free(&r);
-		return(EXIT_SUCCESS);
+		return EXIT_SUCCESS;
 	} else if (PAGE__MAX == r.page || 
 	           KMIME_APP_JSON != r.mime) {
 		http_open(&r, KHTTP_404);
 		khttp_puts(&r, "Page not found.");
 		khttp_free(&r);
-		return(EXIT_SUCCESS);
+		return EXIT_SUCCESS;
 	}
 
 	if (NULL == (r.arg = db_open(DATADIR "/yourprog.db"))) {
 		http_open(&r, KHTTP_500);
 		json_emptydoc(&r);
 		khttp_free(&r);
-		return(EXIT_SUCCESS);
+		return EXIT_SUCCESS;
 	}
+
+#if HAVE_PLEDGE
+	if (-1 == pledge("stdio", NULL)) {
+		kutil_warn(NULL, NULL, "pledge");
+		db_close(r.arg);
+		khttp_free(&r);
+		return EXIT_FAILURE;
+	}
+#endif
 
 	/* 
 	 * Assume we're logging in with a session and grab the session
@@ -319,7 +322,7 @@ main(void)
 		json_emptydoc(&r);
 		db_close(r.arg);
 		khttp_free(&r);
-		return(EXIT_SUCCESS);
+		return EXIT_SUCCESS;
 	}
 
 	switch (r.page) {
@@ -345,5 +348,5 @@ main(void)
 	db_sess_free(s);
 	db_close(r.arg);
 	khttp_free(&r);
-	return(EXIT_SUCCESS);
+	return EXIT_SUCCESS;
 }
