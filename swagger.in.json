@@ -1,8 +1,8 @@
 {
 	"swagger": "2.0",
 	"info": {
-		"title": "@TARGET@",
-		"description": "@TARGET@",
+		"title": "yourprog",
+		"description": "a sample prog",
 		"license": {
 			"name": "ISC license",
 			"url": "https://opensource.org/licenses/ISC"

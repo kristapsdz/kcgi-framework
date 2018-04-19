@@ -1,5 +1,7 @@
 .SUFFIXES: .html .in.xml .xml .js .min.js .db .sql .png
 
+include Makefile.configure
+
 # The default installation is for a default-install OpenBSD box that's
 # running HTTPS (only).
 
@@ -23,29 +25,19 @@ DATADIR = /var/www/data
 # This will have all logging messages by the system.
 LOGFILE = /logs/system.log
 
-# Compilation and link options.
+# Link options.
 # If on a static architecture, STATIC is -static; otherwise empty.
 # I use /usr/local for kcgi and ksql, hence using them here.
 STATIC = -static
-CFLAGS += -I/usr/local/include
-LDFLAGS += -L/usr/local/lib
 
 # Web-server relative location of DATADIR.
 # See DATADIR.
 RDDIR = /data
 
-# Name of installed CGI script, since some servers like to have ".cgi"
-# appended to everything.
-# See TARGET.
-CGINAME = yourprog
-
 # URL location (filename) of CGI script.
-# See CGIBIN and CGINAME.
-CGIURI = /cgi-bin/$(CGINAME)
+CGIURI = /cgi-bin/yourprog
 
 # This is the name of the binary we're going to build.
-# It differs from CGINAME in that it's the install source.
-# See CGINAME.
 TARGET = yourprog
 
 # If on an HTTPS-only installation, should be "-DSECURE".
@@ -57,17 +49,14 @@ APIDOCS = /var/www/htdocs/api-docs
 # Override these with an optional local file.
 sinclude Makefile.local
 
-DATABASE = $(TARGET).db
-OBJS	 = db.o json.o valids.o main.o
+OBJS	 = compats.o db.o json.o valids.o main.o
 HTMLS	 = index.html
 JSMINS	 = index.min.js
-CFLAGS	+= -g -W -Wall -O2 $(SECURE)
 CFLAGS	+= -DLOGFILE=\"$(LOGFILE)\"
 CFLAGS	+= -DDATADIR=\"$(RDDIR)\"
-CFLAGS	+= -DDATABASE=\"$(DATABASE)\"
-VERSION	 = 0.0.1
+VERSION	 = 0.0.2
 
-all: $(TARGET) $(TARGET).db $(HTMLS) $(JSMINS)
+all: yourprog yourprog.db $(HTMLS) $(JSMINS)
 
 api: swagger.json schema.png schema.html
 
@@ -81,41 +70,39 @@ installapi: api
 
 updatecgi: all
 	mkdir -p $(CGIBIN)
-	install -m 0555 $(TARGET) $(CGIBIN)/$(CGINAME)
+	$(INSTALL_PROG) yourprog $(CGIBIN)
 
 installcgi: updatecgi
 	mkdir -p $(DATADIR)
-	rm -f $(DATADIR)/$(TARGET).db
-	rm -f $(DATADIR)/$(TARGET).db-wal
-	rm -f $(DATADIR)/$(TARGET).db-shm
-	install -m 0666 $(TARGET).db $(DATADIR)
+	rm -f $(DATADIR)/yourprog.db
+	$(INSTALL_DATA) yourprog.db $(DATADIR)
 	chmod 0777 $(DATADIR)
 
 clean:
-	rm -f $(TARGET) $(HTMLS) $(JSMINS) $(OBJS) $(TARGET).db
+	rm -f yourprog $(HTMLS) $(JSMINS) $(OBJS) yourprog.db
 	rm -f swagger.json schema.html schema.png 
-	rm -f db.c json.c valids.c extern.h $(TARGET).sql
+	rm -f db.c json.c valids.c extern.h yourprog.sql
 
-schema.html: $(TARGET).sql
-	sqliteconvert $(TARGET).sql >$@
+schema.html: yourprog.sql
+	sqliteconvert yourprog.sql >$@
 
-schema.png: $(TARGET).sql
-	sqliteconvert -i $(TARGET).sql >$@
+schema.png: yourprog.sql
+	sqliteconvert -i yourprog.sql >$@
 
-db.c: $(TARGET).kwbp
-	kwebapp-c-source -Ibvj -s -h extern.h $(TARGET).kwbp >$@
+db.c: yourprog.kwbp
+	kwebapp-c-source -Ibvj -s -h extern.h yourprog.kwbp >$@
 
-json.c: $(TARGET).kwbp
-	kwebapp-c-source -Ibvj -j -Nb -h extern.h $(TARGET).kwbp >$@
+json.c: yourprog.kwbp
+	kwebapp-c-source -Ibvj -j -Nb -h extern.h yourprog.kwbp >$@
 
-valids.c: $(TARGET).kwbp
-	kwebapp-c-source -Ibvj -v -Nb -h extern.h $(TARGET).kwbp >$@
+valids.c: yourprog.kwbp
+	kwebapp-c-source -Ibvj -v -Nb -h extern.h yourprog.kwbp >$@
 
-extern.h: $(TARGET).kwbp
-	kwebapp-c-header -jsv $(TARGET).kwbp >$@
+extern.h: yourprog.kwbp
+	kwebapp-c-header -jsv yourprog.kwbp >$@
 
-$(TARGET).sql: $(TARGET).kwbp
-	kwebapp-sql $(TARGET).kwbp >$@
+yourprog.sql: yourprog.kwbp
+	kwebapp-sql yourprog.kwbp >$@
 
 .sql.db:
 	@rm -f $@
@@ -126,13 +113,13 @@ $(TARGET).sql: $(TARGET).kwbp
 	    -e "s!@VERSION@!$(VERSION)!g" \
 	    -e "s!@CGIURI@!$(CGIURI)!g" $< >$@
 
-$(TARGET): $(OBJS)
+yourprog: $(OBJS)
 	$(CC) $(STATIC) -o $@ $(OBJS) $(LDFLAGS) -lkcgi -lkcgijson -lz -lksql -lsqlite3
 
 $(OBJS): extern.h
 
 swagger.json: swagger.in.json
 	@rm -f $@
-	sed -e "s!@VERSION@!$(VERSION)!g" -e "s!@TARGET@!$(TARGET)!g" swagger.in.json >$@
+	sed -e "s!@VERSION@!$(VERSION)!g" swagger.in.json >$@
 	@chmod 400 $@
 

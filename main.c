@@ -14,6 +14,8 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
+#include "config.h"
+
 #include <inttypes.h>
 #include <stdarg.h>
 #include <stdint.h>
@@ -265,7 +267,7 @@ main(void)
 		return(EXIT_FAILURE);
 	}
 
-#ifdef	__OpenBSD__
+#if HAVE_PLEDGE
 	if (-1 == pledge("stdio rpath cpath wpath flock fattr", NULL)) {
 		kutil_warn(&r, NULL, "pledge");
 		khttp_free(&r);
@@ -291,7 +293,7 @@ main(void)
 		return(EXIT_SUCCESS);
 	}
 
-	if (NULL == (r.arg = db_open(DATADIR "/" DATABASE))) {
+	if (NULL == (r.arg = db_open(DATADIR "/yourprog.db"))) {
 		http_open(&r, KHTTP_500);
 		json_emptydoc(&r);
 		khttp_free(&r);
