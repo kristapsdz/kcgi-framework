@@ -55,10 +55,10 @@ SECURE = -DSECURE
 APIDOCS = /var/www/htdocs/api-docs
 
 # Override these with an optional local file.
-sinclude GNUmakefile.local
+sinclude Makefile.local
 
 DATABASE = $(TARGET).db
-OBJS	 = db.o json.o main.o
+OBJS	 = db.o json.o valids.o main.o
 HTMLS	 = index.html
 JSMINS	 = index.min.js
 CFLAGS	+= -g -W -Wall -O2 $(SECURE)
@@ -93,14 +93,29 @@ installcgi: updatecgi
 
 clean:
 	rm -f $(TARGET) $(HTMLS) $(JSMINS) $(OBJS) $(TARGET).db
-	rm -f swagger.json schema.html schema.png
-	rm -rf $(TARGET).dSYM
+	rm -f swagger.json schema.html schema.png 
+	rm -f db.c json.c valids.c extern.h $(TARGET).sql
 
 schema.html: $(TARGET).sql
 	sqliteconvert $(TARGET).sql >$@
 
 schema.png: $(TARGET).sql
 	sqliteconvert -i $(TARGET).sql >$@
+
+db.c: $(TARGET).kwbp
+	kwebapp-c-source -Ibvj -s -h extern.h $(TARGET).kwbp >$@
+
+json.c: $(TARGET).kwbp
+	kwebapp-c-source -Ibvj -j -Nb -h extern.h $(TARGET).kwbp >$@
+
+valids.c: $(TARGET).kwbp
+	kwebapp-c-source -Ibvj -v -Nb -h extern.h $(TARGET).kwbp >$@
+
+extern.h: $(TARGET).kwbp
+	kwebapp-c-header -jsv $(TARGET).kwbp >$@
+
+$(TARGET).sql: $(TARGET).kwbp
+	kwebapp-sql $(TARGET).kwbp >$@
 
 .sql.db:
 	@rm -f $@

@@ -25,6 +25,7 @@
 
 #include <kcgi.h>
 #include <kcgijson.h>
+#include <ksql.h>
 
 #include "extern.h"
 
@@ -94,6 +95,17 @@ http_open(struct kreq *r, enum khttp code)
 	khttp_body(r);
 }
 
+static void
+json_emptydoc(struct kreq *r)
+{
+	struct kjsonreq	 req;
+
+	kjson_open(&req, r);
+	kjson_obj_open(&req);
+	kjson_obj_close(&req);
+	kjson_close(&req);
+}
+
 /*
  * Process an e-mail address change.
  * Raises HTTP 400 if not all fields exist or if the e-mail address is
@@ -104,11 +116,10 @@ static void
 sendmodemail(struct kreq *r, const struct user *u)
 {
 	struct kpair	*kp;
-	int		 rc;
 
 	if (NULL != (kp = r->fieldmap[KEY_EMAIL])) {
-		rc = db_user_mod_email(r, u, kp->parsed.s);
-		http_open(r, rc ? KHTTP_200 : KHTTP_400);
+		db_user_update_email(r->arg, kp->parsed.s, u->id);
+		http_open(r, KHTTP_200);
 	} else
 		http_open(r, KHTTP_400);
 
@@ -126,8 +137,8 @@ sendmodpass(struct kreq *r, const struct user *u)
 	struct kpair	*kp;
 
 	if (NULL != (kp = r->fieldmap[KEY_PASS])) {
+		db_user_update_pass(r->arg, kp->parsed.s, u->id);
 		http_open(r, KHTTP_200);
-		db_user_mod_pass(r, u, kp->parsed.s);
 	} else
 		http_open(r, KHTTP_400);
 
@@ -146,7 +157,7 @@ sendindex(struct kreq *r, const struct user *u)
 	http_open(r, KHTTP_200);
 	kjson_open(&req, r);
 	kjson_obj_open(&req);
-	json_putuser(&req, u);
+	json_user_obj(&req, u);
 	kjson_obj_close(&req);
 	kjson_close(&req);
 }
@@ -173,7 +184,7 @@ sendlogin(struct kreq *r)
 		return;
 	}
 
-	u = db_user_find(r, kpi->parsed.s, kpp->parsed.s);
+	u = db_user_get_creds(r->arg, kpi->parsed.s, kpp->parsed.s);
 
 	if (NULL == u) {
 		http_open(r, KHTTP_400);
@@ -182,7 +193,7 @@ sendlogin(struct kreq *r)
 	} 
 
 	token = arc4random();
-	sid = db_sess_new(r, token, u);
+	sid = db_sess_insert(r->arg, u->id, token);
 	kutil_epoch2str
 		(time(NULL) + 60 * 60 * 24 * 365,
 		 buf, sizeof(buf));
@@ -210,7 +221,7 @@ sendlogin(struct kreq *r)
  * Returns HTTP 200 with empty JSON body.
  */
 static void
-sendlogout(struct kreq *r, const struct user *u)
+sendlogout(struct kreq *r, const struct sess *s)
 {
 	const char	*secure;
 	char		 buf[32];
@@ -230,9 +241,7 @@ sendlogout(struct kreq *r, const struct user *u)
 		keys[KEY_SESSID].name, secure, buf);
 	khttp_body(r);
 	json_emptydoc(r);
-	db_sess_del(r, u,
-		r->cookiemap[KEY_SESSID]->parsed.i, 
-		r->cookiemap[KEY_SESSTOK]->parsed.i);
+	db_sess_delete_id(r->arg, s->id, s->token);
 }
 
 int
@@ -240,7 +249,7 @@ main(void)
 {
 	struct kreq	 r;
 	enum kcgi_err	 er;
-	struct user	*u;
+	struct sess	*s;
 
 	/* Log into a separate logfile (not system log). */
 
@@ -282,7 +291,7 @@ main(void)
 		return(EXIT_SUCCESS);
 	}
 
-	if ( ! db_open(&r, DATADIR "/" DATABASE)) {
+	if (NULL == (r.arg = db_open(DATADIR "/" DATABASE))) {
 		http_open(&r, KHTTP_500);
 		json_emptydoc(&r);
 		khttp_free(&r);
@@ -295,7 +304,7 @@ main(void)
 	 * This is our first database access.
 	 */
 
-	u = db_sess_resolve(&r,
+	s = db_sess_get_creds(r.arg,
 		NULL != r.cookiemap[KEY_SESSID] ?
 		r.cookiemap[KEY_SESSID]->parsed.i : -1,
 		NULL != r.cookiemap[KEY_SESSTOK] ?
@@ -303,35 +312,36 @@ main(void)
 
 	/* User authorisation. */
 
-	if (PAGE_LOGIN != r.page && NULL == u) {
+	if (PAGE_LOGIN != r.page && NULL == s) {
 		http_open(&r, KHTTP_403);
 		json_emptydoc(&r);
-		db_close(&r);
+		db_close(r.arg);
 		khttp_free(&r);
 		return(EXIT_SUCCESS);
 	}
 
 	switch (r.page) {
 	case (PAGE_INDEX):
-		sendindex(&r, u);
+		sendindex(&r, &s->user);
 		break;
 	case (PAGE_LOGIN):
 		sendlogin(&r);
 		break;
 	case (PAGE_LOGOUT):
-		sendlogout(&r, u);
+		sendlogout(&r, s);
 		break;
 	case (PAGE_USER_MOD_EMAIL):
-		sendmodemail(&r, u);
+		sendmodemail(&r, &s->user);
 		break;
 	case (PAGE_USER_MOD_PASS):
-		sendmodpass(&r, u);
+		sendmodpass(&r, &s->user);
 		break;
 	default:
 		abort();
 	}
 
-	db_close(&r);
+	db_sess_free(s);
+	db_close(r.arg);
 	khttp_free(&r);
 	return(EXIT_SUCCESS);
 }

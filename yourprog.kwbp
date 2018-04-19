@@ -1,0 +1,25 @@
+
+struct user {
+	field email email unique;
+	field hash password;
+	field id int rowid;
+
+	search email, hash: name creds;
+
+	update email: id: name email;
+	update hash: id: name pass;
+};
+
+struct sess {
+	field user struct userid;
+	field userid:user.id int;
+	field token int;
+	field id int rowid;
+
+	delete id, token: name id;
+
+	insert;
+
+	search id, token: name creds;
+};
+
