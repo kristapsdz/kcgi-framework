@@ -38,7 +38,12 @@ using the database documentation.
 Begin by reading the [Makefile](Makefile): it will list all of the
 variables you'll need to set for your installation.  Override these in a
 `Makefile.local`.  The default values assume an OpenBSD system with a
-stock install.
+stock install.   You'll probably need to set the following:
+
+```
+CPPFLAGS = -I/usr/local/include
+LDFLAGS = -L/usr/local/lib
+```
 
 Then read the [main.c](main.c) and [yourprog.kwbp](yourprog.kwbp).
 The former drives the output of the latter when pushed through
