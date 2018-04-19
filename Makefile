@@ -119,7 +119,7 @@ yourprog.sql: yourprog.kwbp
 	    -e "s!@CGIURI@!$(CGIURI)!g" $< >$@
 
 yourprog: $(OBJS)
-	$(CC) $(STATIC) -o $@ $(OBJS) $(LDFLAGS) -lkcgi -lkcgijson -lz -lksql -lsqlite3
+	$(CC) $(STATIC) -o $@ $(OBJS) $(LDFLAGS) -lkcgi -lkcgijson -lz -lksql -lsqlite3 -lm -lpthread
 
 $(OBJS): extern.h
 
