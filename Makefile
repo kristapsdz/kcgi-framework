@@ -1,4 +1,5 @@
 .SUFFIXES: .html .in.xml .xml .js .min.js .db .sql .png
+.PHONY: clean distclean
 
 include Makefile.configure
 
@@ -82,6 +83,9 @@ clean:
 	rm -f yourprog $(HTMLS) $(JSMINS) $(OBJS) yourprog.db
 	rm -f swagger.json schema.html schema.png 
 	rm -f db.c json.c valids.c extern.h yourprog.sql
+
+distclean: clean
+	rm -f config.log config.h Makefile.configure
 
 schema.html: yourprog.sql
 	sqliteconvert yourprog.sql >$@
