@@ -56,7 +56,7 @@ HTMLS		 = index.html
 JSMINS		 = index.min.js
 CPPFLAGS	+= -DLOGFILE=\"$(LOGFILE)\"
 CPPFLAGS	+= -DDATADIR=\"$(RDDIR)\"
-VERSION		 = 0.0.2
+VERSION		 = 0.0.3
 
 all: yourprog yourprog.db $(HTMLS) $(JSMINS)
 
@@ -95,13 +95,13 @@ schema.png: yourprog.sql
 	sqliteconvert -i yourprog.sql >$@
 
 db.c: yourprog.kwbp
-	kwebapp-c-source -Ibvj -s -h extern.h yourprog.kwbp >$@
+	kwebapp-c-source -Idvj -s -h extern.h yourprog.kwbp >$@
 
 json.c: yourprog.kwbp
-	kwebapp-c-source -Ibvj -j -Nb -h extern.h yourprog.kwbp >$@
+	kwebapp-c-source -Idvj -j -Nd -h extern.h yourprog.kwbp >$@
 
 valids.c: yourprog.kwbp
-	kwebapp-c-source -Ibvj -v -Nb -h extern.h yourprog.kwbp >$@
+	kwebapp-c-source -Idvj -v -Nd -h extern.h yourprog.kwbp >$@
 
 extern.h: yourprog.kwbp
 	kwebapp-c-header -jsv yourprog.kwbp >$@
