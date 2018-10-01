@@ -70,6 +70,31 @@ database.  *Warning*: this will replace the existing database.
 
 Run `make updatecgi` to install only the CGI script.
 
+## Package management
+
+Most of my CGI scripts are managed by a package manager, not by
+hand-installation.  kcgi-framework includes the building blocks for an
+OpenBSD package by including necessary files.
+
+The port files exist in the [OpenBSD](openbsd) directory.  As-is, they
+will install the CGI script in `/var/www/cgi-bin` and the database and
+database specification in `/var/www/data`.
+
+The CGI script is installed with no permission bits.  This is because at
+initial installation, there's no database yet.  And on upgrade, the
+database may not be in sync with the CGI script.
+
+To solve this, the package manager will run the `yourprog-upgrade`
+script, which generates the difference between the database
+specification for the existing database in `/var/www/data` with the
+current version's specification.  It then patches the database and
+installs the current specification.  This keeps your database smoothly
+up to date.
+
+Of course, this is something you'll need to carefully test!  It uses
+[kwebapp-sqldiff(1)](https://kristaps.bsd.lv/kwebapp/kwebapp-sqldiff.1.html),
+which has its limitations.
+
 ## License
 
 All sources use the ISC (like OpenBSD) license.
