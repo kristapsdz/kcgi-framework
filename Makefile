@@ -39,9 +39,6 @@ RDDIR = /data
 # URL location (filename) of CGI script.
 CGIURI = /cgi-bin/yourprog
 
-# This is the name of the binary we're going to build.
-TARGET = yourprog
-
 # If on an HTTPS-only installation, should be "-DSECURE".
 SECURE = -DSECURE
 
@@ -67,13 +64,29 @@ yourprog-upgrade: yourprog-upgrade.in.sh
 	    -e "s!@CGIBIN@!$(CGIBIN)!g" \
 	    -e "s!@SHAREDIR@!$(SHAREDIR)!g" yourprog-upgrade.in.sh >$@
 
+install: all
+	mkdir -p $(DESTDIR)$(SHAREDIR)/yourprog
+	mkdir -p $(DESTDIR)$(SBINDIR)
+	mkdir -p $(DESTDIR)$(CGIBIN)
+	mkdir -p $(DESTDIR)$(HTDOCS)
+	$(INSTALL_DATA) $(HTMLS) $(JSMINS) $(DESTDIR)$(HTDOCS)
+	$(INSTALL_DATA) yourprog.kwbp $(DESTDIR)$(SHAREDIR)/yourprog
+	$(INSTALL_PROGRAM) yourprog $(DESTDIR)$(CGIBIN)
+	$(INSTALL_PROGRAM) yourprog-upgrade $(DESTDIR)$(SBINDIR)
+
+uninstall:
+	rm -f $(DESTDIR)$(SHAREDIR)/yourprog/yourprog.kwbp
+	rmdir $(DESTDIR)$(SHAREDIR)/yourprog
+	rm -f $(DESTDIR)$(CGIBIN)/yourprog
+	rm -f $(DESTDIR)$(SBINDIR)/yourprog-upgrade
+
 installwww: all
 	mkdir -p $(HTDOCS)
-	install -m 0444 $(HTMLS) $(JSMINS) $(HTDOCS)
+	$(INSTALL_DATA) $(HTMLS) $(JSMINS) $(HTDOCS)
 
 installapi: api
 	mkdir -p $(APIDOCS)
-	install -m 0444 schema.html schema.png swagger.json $(APIDOCS)
+	$(INSTALL_DATA) schema.html schema.png swagger.json $(APIDOCS)
 
 updatecgi: all
 	mkdir -p $(CGIBIN)
