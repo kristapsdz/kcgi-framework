@@ -58,9 +58,14 @@ CPPFLAGS	+= -DLOGFILE=\"$(LOGFILE)\"
 CPPFLAGS	+= -DDATADIR=\"$(RDDIR)\"
 VERSION		 = 0.0.3
 
-all: yourprog yourprog.db $(HTMLS) $(JSMINS)
+all: yourprog yourprog.db yourprog-upgrade $(HTMLS) $(JSMINS)
 
 api: swagger.json schema.png schema.html
+
+yourprog-upgrade: yourprog-upgrade.in.sh
+	sed -e "s!@DATADIR@!$(DATADIR)!g" \
+	    -e "s!@CGIBIN@!$(CGIBIN)!g" \
+	    -e "s!@SHAREDIR@!$(SHAREDIR)!g" yourprog-upgrade.in.sh >$@
 
 installwww: all
 	mkdir -p $(HTDOCS)
@@ -81,7 +86,7 @@ installcgi: updatecgi
 	chmod 0777 $(DATADIR)
 
 clean:
-	rm -f yourprog $(HTMLS) $(JSMINS) $(OBJS) yourprog.db
+	rm -f yourprog yourprog-upgrade $(HTMLS) $(JSMINS) $(OBJS) yourprog.db
 	rm -f swagger.json schema.html schema.png 
 	rm -f db.c json.c valids.c extern.h yourprog.sql
 
