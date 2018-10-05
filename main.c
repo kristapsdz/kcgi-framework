@@ -45,21 +45,6 @@ enum	page {
 	PAGE__MAX
 };
 
-enum	key {
-	KEY_EMAIL,
-	KEY_PASS,
-	KEY_SESSTOK,
-	KEY_SESSID,
-	KEY__MAX
-};
-
-static const struct kvalid keys[KEY__MAX] = {
-	{ kvalid_email, "email" }, /* KEY_EMAIL */
-	{ kvalid_stringne, "pass" }, /* KEY_PASS */
-	{ kvalid_uint, "stok" }, /* KEY_SESSTOK */
-	{ kvalid_int, "sid" }, /* KEY_SESSID */
-};
-
 static const char *const pages[PAGE__MAX] = {
 	"index", /* PAGE_INDEX */
 	"login", /* PAGE_LOGIN */
@@ -119,7 +104,7 @@ sendmodemail(struct kreq *r, const struct user *u)
 {
 	struct kpair	*kp;
 
-	if (NULL != (kp = r->fieldmap[KEY_EMAIL])) {
+	if (NULL != (kp = r->fieldmap[VALID_USER_EMAIL])) {
 		db_user_update_email(r->arg, kp->parsed.s, u->id);
 		http_open(r, KHTTP_200);
 	} else
@@ -138,7 +123,7 @@ sendmodpass(struct kreq *r, const struct user *u)
 {
 	struct kpair	*kp;
 
-	if (NULL != (kp = r->fieldmap[KEY_PASS])) {
+	if (NULL != (kp = r->fieldmap[VALID_USER_HASH])) {
 		db_user_update_pass(r->arg, kp->parsed.s, u->id);
 		http_open(r, KHTTP_200);
 	} else
@@ -179,8 +164,8 @@ sendlogin(struct kreq *r)
 	struct user	*u;
 	const char	*secure;
 
-	if (NULL == (kpi = r->fieldmap[KEY_EMAIL]) ||
-	    NULL == (kpp = r->fieldmap[KEY_PASS])) {
+	if (NULL == (kpi = r->fieldmap[VALID_USER_EMAIL]) ||
+	    NULL == (kpp = r->fieldmap[VALID_USER_HASH])) {
 		http_open(r, KHTTP_400);
 		json_emptydoc(r);
 		return;
@@ -206,10 +191,10 @@ sendlogin(struct kreq *r)
 #endif
 	khttp_head(r, kresps[KRESP_SET_COOKIE],
 		"%s=%" PRId64 ";%s HttpOnly; path=/; expires=%s", 
-		keys[KEY_SESSTOK].name, token, secure, buf);
+		valid_keys[VALID_SESS_TOKEN].name, token, secure, buf);
 	khttp_head(r, kresps[KRESP_SET_COOKIE],
 		"%s=%" PRId64 ";%s HttpOnly; path=/; expires=%s", 
-		keys[KEY_SESSID].name, sid, secure, buf);
+		valid_keys[VALID_SESS_ID].name, sid, secure, buf);
 	http_open(r, KHTTP_200);
 	khttp_body(r);
 	json_emptydoc(r);
@@ -236,10 +221,10 @@ sendlogout(struct kreq *r, const struct sess *s)
 	http_alloc(r, KHTTP_200);
 	khttp_head(r, kresps[KRESP_SET_COOKIE],
 		"%s=; path=/;%s HttpOnly; expires=%s", 
-		keys[KEY_SESSTOK].name, secure, buf);
+		valid_keys[VALID_SESS_TOKEN].name, secure, buf);
 	khttp_head(r, kresps[KRESP_SET_COOKIE],
 		"%s=; path=/;%s HttpOnly; expires=%s", 
-		keys[KEY_SESSID].name, secure, buf);
+		valid_keys[VALID_SESS_ID].name, secure, buf);
 	khttp_body(r);
 	json_emptydoc(r);
 	db_sess_delete_id(r->arg, s->id, s->token);
@@ -261,7 +246,7 @@ main(void)
 	}
 #endif
 
-	er = khttp_parse(&r, keys, KEY__MAX, 
+	er = khttp_parse(&r, valid_keys, VALID__MAX, 
 		pages, PAGE__MAX, PAGE_INDEX);
 
 	if (KCGI_OK != er) {
@@ -310,10 +295,10 @@ main(void)
 	 */
 
 	s = db_sess_get_creds(r.arg,
-		NULL != r.cookiemap[KEY_SESSID] ?
-		r.cookiemap[KEY_SESSID]->parsed.i : -1,
-		NULL != r.cookiemap[KEY_SESSTOK] ?
-		r.cookiemap[KEY_SESSTOK]->parsed.i : -1);
+		NULL != r.cookiemap[VALID_SESS_ID] ?
+		r.cookiemap[VALID_SESS_ID]->parsed.i : -1,
+		NULL != r.cookiemap[VALID_SESS_TOKEN] ?
+		r.cookiemap[VALID_SESS_TOKEN]->parsed.i : -1);
 
 	/* User authorisation. */
 
