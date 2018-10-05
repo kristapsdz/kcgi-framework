@@ -20,21 +20,21 @@
 						Bad user and/or password.  Try again!
 					</p>
 					<fieldset>
-						<div>
-							<label for="loginform-email">E-mail address</label>
-							<div><input id="loginform-email" type="email" name="email" required="required" /></div>
-						</div>
-						<div>
-							<label for="loginform-password">Password</label>
-							<div><input id="loginform-password" type="password" name="pass" required="required" /></div>
-						</div>
+						<label>
+							E-mail address
+							<input type="email" name="user-email" required="required" />
+						</label>
+						<label>
+							Password
+							<input type="password" name="user-hash" required="required" />
+						</label>
 					</fieldset>
 					<div class="buttons">
 						<button type="submit" class="submit">
 							Login
 						</button>
 						<button type="button" disabled="disabled" class="hide pending">
-							Logging in...
+							Logging in&#8230;
 						</button>
 					</div>
 				</form>
@@ -46,33 +46,33 @@
 				<div id="usermod">
 					<form id="modpassform" method="post" action="@CGIURI@/usermodpass.json">
 						<fieldset>
-							<div>
-								<label>Password</label>
-								<div><input type="password" placeholder="Login password" name="pass" required="required" /></div>
-							</div>
+							<label>
+								Password
+								<input type="password" name="user-hash" required="required" />
+							</label>
 						</fieldset>
 						<div class="buttons">
 							<button type="submit" class="submit">
 								Change
 							</button>
 							<button type="button" disabled="disabled" class="pending hide">
-								Changing...
+								Changing&#8230;
 							</button>
 						</div>
 					</form>
 					<form id="modemailform" method="post" action="@CGIURI@/usermodemail.json">
 						<fieldset>
-							<div>
-								<label>E-mail</label>
-								<div><input type="email" id="user-input-email" name="email" required="required" /></div>
-							</div>
+							<label>
+								E-mail
+								<input type="email" name="user-email" required="required" />
+							</label>
 						</fieldset>
 						<div class="buttons">
 							<button type="submit" class="submit">
 								Change
 							</button>
 							<button type="button" disabled="disabled" class="hide pending">
-								Changing...
+								Changing&#8230;
 							</button>
 						</div>
 					</form>
@@ -83,7 +83,7 @@
 							Logout
 						</button>
 						<button type="button" disabled="disabled" class="pending hide">
-							Logging out...
+							Logging out&#8230;
 						</button>
 					</div>
 				</form>
