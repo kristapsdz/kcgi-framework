@@ -2,9 +2,8 @@
 
 kcgi-framework is a set of files for starting a
 [BCHS](https://learnbchs.org) project that uses
-[kcgi](https://kristaps.bsd.lv/kcgi),
-[ksql](https://kristaps.bsd.lv/ksql), and
-[kwebapp](https://kristaps.bsd.lv/kwebapp).
+[kcgi](https://kristaps.bsd.lv/kcgi) and
+[openradtool](https://kristaps.bsd.lv/openradtool).
 
 The system, as is, minimally implements logging in and logging out over a
 session-based, RESTful JSON API.  It has lots of documentation:
@@ -29,9 +28,8 @@ project without needing to re-implement basis user management.
 
 This is a framework (or foundation), so you'll use this to get your
 project started.  Begin by copying all files into your project
-directory.  You'll also need [kcgi](https://kristaps.bsd.lv/kcgi) and
-[ksql](https://kristaps.bsd.lv/ksql),
-[kwebapp](https://kristaps.bsd.lv/kwebapp), and
+directory.  You'll also need [kcgi](https://kristaps.bsd.lv/kcgi),
+[openradtool](https://kristaps.bsd.lv/openradtool), and
 [sqliteconvert](https://kristaps.bsd.lv/sqliteconvert) if you plan on
 using the database documentation.
 
@@ -47,12 +45,12 @@ LDFLAGS = -L/usr/local/lib
 
 Then read the [main.c](main.c) and [yourprog.kwbp](yourprog.kwbp).
 The former drives the output of the latter when pushed through
-[kwebapp](https://kristaps.bsd.lv/kwebapp) in various ways.
+[openradtool](https://kristaps.bsd.lv/openradtool) in various ways.
 
 Finally, read [index.xml](index.xml) and [index.js](index.js), both of
 which drive the JSON backend.  It's all super-simple and self-contained.
-([kwebapp](https://kristaps.bsd.lv/kwebapp) can also provide this, but I
-erred on the side of simplicity.)
+([openradtool](https://kristaps.bsd.lv/openradtool) can also provide
+this, but I erred on the side of simplicity.)
 
 Before running `make`, you'll need to run `./configure` to generate the
 compatibility layer.
@@ -92,7 +90,7 @@ installs the current specification.  This keeps your database smoothly
 up to date.
 
 Of course, this is something you'll need to carefully test!  It uses
-[kwebapp-sqldiff(1)](https://kristaps.bsd.lv/kwebapp/kwebapp-sqldiff.1.html),
+[ort-sqldiff(1)](https://kristaps.bsd.lv/openradtool/ort-sqldiff.1.html),
 which has its limitations.
 
 ## License
