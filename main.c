@@ -1,6 +1,6 @@
 /*	$Id$ */
 /*
- * Copyright (c) 2016, 2018 Kristaps Dzonsons <kristaps@bsd.lv>
+ * Copyright (c) 2016, 2018, 2020 Kristaps Dzonsons <kristaps@bsd.lv>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -16,6 +16,10 @@
  */
 #include "config.h"
 
+#if HAVE_ERR
+# include <err.h>
+#endif
+
 #include <inttypes.h>
 #include <stdarg.h>
 #include <stdint.h>
@@ -27,7 +31,6 @@
 
 #include <kcgi.h>
 #include <kcgijson.h>
-#include <ksql.h>
 
 #include "extern.h"
 
@@ -54,11 +57,11 @@ static const char *const pages[PAGE__MAX] = {
 };
 
 /*
- * Fill out all HTTP secure headers.
- * Use the existing document's MIME type.
+ * Fill out all headers then start the HTTP document body.
+ * No more headers after this point!
  */
 static void
-http_alloc(struct kreq *r, enum khttp code)
+http_open(struct kreq *r, enum khttp code)
 {
 
 	khttp_head(r, kresps[KRESP_STATUS], 
@@ -68,17 +71,6 @@ http_alloc(struct kreq *r, enum khttp code)
 	khttp_head(r, "X-Content-Type-Options", "nosniff");
 	khttp_head(r, "X-Frame-Options", "DENY");
 	khttp_head(r, "X-XSS-Protection", "1; mode=block");
-}
-
-/*
- * Fill out all headers with http_alloc() then start the HTTP document
- * body (no more headers after this point!)
- */
-static void
-http_open(struct kreq *r, enum khttp code)
-{
-
-	http_alloc(r, code);
 	khttp_body(r);
 }
 
@@ -196,7 +188,6 @@ sendlogin(struct kreq *r)
 		"%s=%" PRId64 ";%s HttpOnly; path=/; expires=%s", 
 		valid_keys[VALID_SESS_ID].name, sid, secure, buf);
 	http_open(r, KHTTP_200);
-	khttp_body(r);
 	json_emptydoc(r);
 	db_user_free(u);
 }
@@ -218,14 +209,13 @@ sendlogout(struct kreq *r, const struct sess *s)
 #else
 	secure = "";
 #endif
-	http_alloc(r, KHTTP_200);
 	khttp_head(r, kresps[KRESP_SET_COOKIE],
 		"%s=; path=/;%s HttpOnly; expires=%s", 
 		valid_keys[VALID_SESS_TOKEN].name, secure, buf);
 	khttp_head(r, kresps[KRESP_SET_COOKIE],
 		"%s=; path=/;%s HttpOnly; expires=%s", 
 		valid_keys[VALID_SESS_ID].name, secure, buf);
-	khttp_body(r);
+	http_open(r, KHTTP_200);
 	json_emptydoc(r);
 	db_sess_delete_id(r->arg, s->id, s->token);
 }
@@ -237,19 +227,10 @@ main(void)
 	enum kcgi_err	 er;
 	struct sess	*s;
 
-	kutil_openlog(LOGFILE);
-
-#if HAVE_PLEDGE
-	if (-1 == pledge("stdio rpath cpath wpath flock fattr proc", NULL)) {
-		kutil_warn(NULL, NULL, "pledge");
-		return EXIT_FAILURE;
-	}
-#endif
-
 	er = khttp_parse(&r, valid_keys, VALID__MAX, 
 		pages, PAGE__MAX, PAGE_INDEX);
 
-	if (KCGI_OK != er) {
+	if (er != KCGI_OK) {
 		kutil_warnx(NULL, NULL, "%s", kcgi_strerror(er));
 		return EXIT_FAILURE;
 	}
@@ -272,7 +253,10 @@ main(void)
 		return EXIT_SUCCESS;
 	}
 
-	if (NULL == (r.arg = db_open(DATADIR "/yourprog.db"))) {
+	r.arg = db_open_logging
+		(DATADIR "/yourprog.db", NULL, warnx, NULL);
+
+	if (r.arg == NULL) {
 		http_open(&r, KHTTP_500);
 		json_emptydoc(&r);
 		khttp_free(&r);
