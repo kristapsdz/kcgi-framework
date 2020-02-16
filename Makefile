@@ -22,14 +22,9 @@ CGIBIN = /var/www/cgi-bin
 # See RDDIR.
 DATADIR = /var/www/data
 
-# Web-server relative location of system log file.
-# This will have all logging messages by the system.
-LOGFILE = /logs/system.log
-LOGFFILE = /var/www/logs/system.log
-
 # Link options.
 # If on a static architecture, STATIC is -static; otherwise empty.
-# I use /usr/local for kcgi and ksql, hence using them here.
+# I use /usr/local for kcgi and sqlbox, hence using them here.
 STATIC = -static
 
 # Web-server relative location of DATADIR.
@@ -51,9 +46,8 @@ sinclude Makefile.local
 OBJS		 = compats.o db.o json.o valids.o main.o
 HTMLS		 = index.html
 JSMINS		 = index.min.js
-CPPFLAGS	+= -DLOGFILE=\"$(LOGFILE)\"
 CPPFLAGS	+= -DDATADIR=\"$(RDDIR)\"
-VERSION		 = 0.0.3
+VERSION		 = 0.0.4
 
 all: yourprog yourprog.db yourprog-upgrade $(HTMLS) $(JSMINS)
 
@@ -113,19 +107,19 @@ schema.png: yourprog.sql
 	sqliteconvert -i yourprog.sql >$@
 
 db.c: yourprog.kwbp
-	kwebapp-c-source -Idvj -s -h extern.h yourprog.kwbp >$@
+	ort-c-source -Idvj -h extern.h yourprog.kwbp >$@
 
 json.c: yourprog.kwbp
-	kwebapp-c-source -Idvj -j -Nd -h extern.h yourprog.kwbp >$@
+	ort-c-source -Idvj -j -Nd -h extern.h yourprog.kwbp >$@
 
 valids.c: yourprog.kwbp
-	kwebapp-c-source -Idvj -v -Nd -h extern.h yourprog.kwbp >$@
+	ort-c-source -Idvj -v -Nd -h extern.h yourprog.kwbp >$@
 
 extern.h: yourprog.kwbp
-	kwebapp-c-header -jsv yourprog.kwbp >$@
+	ort-c-header -jv yourprog.kwbp >$@
 
 yourprog.sql: yourprog.kwbp
-	kwebapp-sql yourprog.kwbp >$@
+	ort-sql yourprog.kwbp >$@
 
 .sql.db:
 	@rm -f $@
@@ -137,7 +131,7 @@ yourprog.sql: yourprog.kwbp
 	    -e "s!@CGIURI@!$(CGIURI)!g" $< >$@
 
 yourprog: $(OBJS)
-	$(CC) $(STATIC) -o $@ $(OBJS) $(LDFLAGS) -lkcgi -lkcgijson -lz -lksql -lsqlite3 -lm -lpthread
+	$(CC) $(STATIC) -o $@ $(OBJS) $(LDFLAGS) -lkcgi -lkcgijson -lz -lsqlbox -lsqlite3 -lm -lpthread
 
 $(OBJS): extern.h
 
