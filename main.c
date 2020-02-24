@@ -96,7 +96,7 @@ sendmodemail(struct kreq *r, const struct user *u)
 {
 	struct kpair	*kp;
 
-	if (NULL != (kp = r->fieldmap[VALID_USER_EMAIL])) {
+	if ((kp = r->fieldmap[VALID_USER_EMAIL]) != NULL) {
 		db_user_update_email(r->arg, kp->parsed.s, u->id);
 		http_open(r, KHTTP_200);
 	} else
@@ -115,7 +115,7 @@ sendmodpass(struct kreq *r, const struct user *u)
 {
 	struct kpair	*kp;
 
-	if (NULL != (kp = r->fieldmap[VALID_USER_HASH])) {
+	if ((kp = r->fieldmap[VALID_USER_HASH]) != NULL) {
 		db_user_update_pass(r->arg, kp->parsed.s, u->id);
 		http_open(r, KHTTP_200);
 	} else
@@ -156,8 +156,8 @@ sendlogin(struct kreq *r)
 	struct user	*u;
 	const char	*secure;
 
-	if (NULL == (kpi = r->fieldmap[VALID_USER_EMAIL]) ||
-	    NULL == (kpp = r->fieldmap[VALID_USER_HASH])) {
+	if ((kpi = r->fieldmap[VALID_USER_EMAIL]) == NULL ||
+	    (kpp = r->fieldmap[VALID_USER_HASH]) == NULL) {
 		http_open(r, KHTTP_400);
 		json_emptydoc(r);
 		return;
@@ -165,7 +165,7 @@ sendlogin(struct kreq *r)
 
 	u = db_user_get_creds(r->arg, kpi->parsed.s, kpp->parsed.s);
 
-	if (NULL == u) {
+	if (u == NULL) {
 		http_open(r, KHTTP_400);
 		json_emptydoc(r);
 		return;
@@ -240,13 +240,13 @@ main(void)
 	 * sure we're a page, make sure we're a JSON file.
 	 */
 
-	if (KMETHOD_GET != r.method && 
-	    KMETHOD_POST != r.method) {
+	if (r.method != KMETHOD_GET && 
+	    r.method != KMETHOD_POST) {
 		http_open(&r, KHTTP_405);
 		khttp_free(&r);
 		return EXIT_SUCCESS;
-	} else if (PAGE__MAX == r.page || 
-	           KMIME_APP_JSON != r.mime) {
+	} else if (r.page == PAGE__MAX || 
+	           r.mime != KMIME_APP_JSON) {
 		http_open(&r, KHTTP_404);
 		khttp_puts(&r, "Page not found.");
 		khttp_free(&r);
@@ -264,7 +264,7 @@ main(void)
 	}
 
 #if HAVE_PLEDGE
-	if (-1 == pledge("stdio", NULL)) {
+	if (pledge("stdio", NULL) == -1) {
 		kutil_warn(NULL, NULL, "pledge");
 		db_close(r.arg);
 		khttp_free(&r);
@@ -279,14 +279,14 @@ main(void)
 	 */
 
 	s = db_sess_get_creds(r.arg,
-		NULL != r.cookiemap[VALID_SESS_ID] ?
+		r.cookiemap[VALID_SESS_ID] != NULL ?
 		r.cookiemap[VALID_SESS_ID]->parsed.i : -1,
-		NULL != r.cookiemap[VALID_SESS_TOKEN] ?
+		r.cookiemap[VALID_SESS_TOKEN] != NULL ?
 		r.cookiemap[VALID_SESS_TOKEN]->parsed.i : -1);
 
 	/* User authorisation. */
 
-	if (PAGE_LOGIN != r.page && NULL == s) {
+	if (r.page != PAGE_LOGIN && s == NULL) {
 		http_open(&r, KHTTP_403);
 		json_emptydoc(&r);
 		db_close(r.arg);
@@ -295,19 +295,19 @@ main(void)
 	}
 
 	switch (r.page) {
-	case (PAGE_INDEX):
+	case PAGE_INDEX:
 		sendindex(&r, &s->user);
 		break;
-	case (PAGE_LOGIN):
+	case PAGE_LOGIN:
 		sendlogin(&r);
 		break;
-	case (PAGE_LOGOUT):
+	case PAGE_LOGOUT:
 		sendlogout(&r, s);
 		break;
-	case (PAGE_USER_MOD_EMAIL):
+	case PAGE_USER_MOD_EMAIL:
 		sendmodemail(&r, &s->user);
 		break;
-	case (PAGE_USER_MOD_PASS):
+	case PAGE_USER_MOD_PASS:
 		sendmodpass(&r, &s->user);
 		break;
 	default:
