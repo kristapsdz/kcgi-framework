@@ -11,16 +11,20 @@ HOMEPAGE =	https://...
 MAINTAINER =	you <youremail>
 
 # ISC
-PERMIT_PACKAGE_CDROM =	Yes
+PERMIT_PACKAGE =	Yes
 
 # uses pledge()
-WANTLIB += c
+WANTLIB += c sqlite3 z
 
-BUILD_DEPENDS =	www/kwebapp \
+BUILD_DEPENDS =	www/openradtool \
 		www/kcgi \
-		databases/ksql
+		databases/sqlbox
+
+RUN_DEPENDS =	www/openradtool
 
 MASTER_SITES =	https://...
+
+SUBST_VARS = VARBASE
 
 MAKE_ENV += 	CPPFLAGS="${CPPFLAGS} -I${LOCALBASE}/include" \
 		LDFLAGS="${LDFLAGS} -L${LOCALBASE}/lib"
