@@ -14,8 +14,9 @@ session-based, RESTful JSON API.  It has lots of documentation:
 - well-documented C and JS source code
 
 The existing code tries to follow best practises for all elements of the
-stack: clean, secure C code that's logically separated, HTML and
-JavaScript that are well-formed and satisfy CSP policies, and so on.
+stack: clean ([style(9)](https://man.openbsd.org/style.9)), secure C code
+that's logically separated, HTML and JavaScript that are well-formed and
+satisfy CSP policies, and so on.
 
 It's also portable within UNIX systems as provided by
 [oconfigure](https://github.com/kristapsdz/oconfigure).
@@ -36,7 +37,7 @@ using the database documentation.
 Begin by reading the [Makefile](Makefile): it will list all of the
 variables you'll need to set for your installation.  Override these in a
 `Makefile.local`.  The default values assume an OpenBSD system with a
-stock install.   You'll probably need to set the following:
+stock install.   You'll probably need to set at least the following:
 
 ```
 CPPFLAGS = -I/usr/local/include
@@ -51,6 +52,11 @@ Finally, read [index.xml](index.xml) and [index.js](index.js), both of
 which drive the JSON backend.  It's all super-simple and self-contained.
 ([openradtool](https://kristaps.bsd.lv/openradtool) can also provide
 this, but I erred on the side of simplicity.)
+
+(You should probably use [TypeScript](https://www.typescriptlang.org/)
+instead of JavaScript, but I'm keeping this simple.  Realistically that
+only means installing the compiler, adding some TypeScript to JavaScript
+in the Makefile, and that's it.)
 
 Before running `make`, you'll need to run `./configure` to generate the
 compatibility layer.
@@ -67,6 +73,20 @@ Run `make installcgi` to install the CGI script and a fresh copy of the
 database.  *Warning*: this will replace the existing database.
 
 Run `make updatecgi` to install only the CGI script.
+
+If you want to create a user to play with, use
+[encrypt(1)](https://man.openbsd.org/encrypt.1) to generate a password
+hash and insert those into the database prior to `make installcgi`.
+Assuming a user `foo@bar.com` and substituting `yourpassword` for your
+password and `yourhash` for the output of the encryption:
+
+```sh
+% make
+% echo 'yourpassword' | encrypt
+% sqlite3 yourprog.db
+sqlite> insert into user values ('foo@bar.com', 'yourhash', 1);
+sqlite> .quit
+```
 
 ## Package management
 
