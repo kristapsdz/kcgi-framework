@@ -171,7 +171,12 @@ sendlogin(struct kreq *r)
 		return;
 	} 
 
+#if HAVE_ARC4RANDOM
 	token = arc4random();
+#else
+	token = random();
+#endif
+
 	sid = db_sess_insert(r->arg, u->id, token);
 	kutil_epoch2str
 		(time(NULL) + 60 * 60 * 24 * 365,
@@ -226,6 +231,12 @@ main(void)
 	struct kreq	 r;
 	enum kcgi_err	 er;
 	struct sess	*s;
+
+	/* If this applies to your OS, you've made bad decisions. */
+
+#if !HAVE_ARC4RANDOM
+	srandom(time(NULL) + getpid());
+#endif
 
 	er = khttp_parse(&r, valid_keys, VALID__MAX, 
 		pages, PAGE__MAX, PAGE_INDEX);
