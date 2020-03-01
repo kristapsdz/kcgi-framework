@@ -3,51 +3,53 @@
 
 include Makefile.configure
 
-# The default installation is for a default-install OpenBSD box that's
-# running HTTPS (only).
+# Path to static media.
+# HTDOCS is the file-system path; HTURI is the URL path.
 
-# File-system location (directory) of static media.
-# See HTURI for the web-visible component.
 HTDOCS = /var/www/htdocs
-
-# URL location (path) of static media.
-# See HTDOCS.
 HTURI = 
 
-# File-system location (directory) of CGI script.
-# See CGIURI.
+# Path to the CGI script.
+# CGIBIN is the file-system path; HTURI is the URL path.
+
 CGIBIN = /var/www/cgi-bin
-
-# File-system location of database.
-# See RDDIR.
-DATADIR = /var/www/data
-
-# Link options.
-# If on a static architecture, STATIC is -static; otherwise empty.
-# I use /usr/local for kcgi and sqlbox, hence using them here.
-STATIC = -static
-
-# Web-server relative location of DATADIR.
-# See DATADIR.
-RDDIR = /data
-
-# URL location (filename) of CGI script.
 CGIURI = /cgi-bin/yourprog
 
+# Path to the database
+# DATADIR is the file-system path; RDDIR is in the chroot.
+# If there's no chroot, these are the same.
+
+DATADIR = /var/www/data
+RDDIR = /data
+
+# If on a static architecture, set to -static; otherwise empty.
+
+STATIC = -static
+
 # If on an HTTPS-only installation, should be "-DSECURE".
+
 SECURE = -DSECURE
 
-# File-system location (directory) of Swagger API.
+# File-system path where Swagger API is installed.
+
 APIDOCS = /var/www/htdocs/api-docs
 
 # Override these with an optional local file.
+
 sinclude Makefile.local
 
 OBJS		 = compats.o db.o json.o valids.o main.o
 HTMLS		 = index.html
 JSMINS		 = index.min.js
+CFLAGS		+= `pkg-config --cflags sqlbox kcgi-json`
+# Linux systems may also need -lcrypt.
+LDFLAGS		+= `pkg-config --libs --static sqlbox kcgi-json`
 CPPFLAGS	+= -DDATADIR=\"$(RDDIR)\"
 VERSION		 = 0.0.4
+
+# If on FreeBSD, which doesn't use CPPFLAGS.
+
+# CFLAGS	+= $(CPPFLAGS)
 
 all: yourprog yourprog.db yourprog-upgrade $(HTMLS) $(JSMINS)
 
@@ -131,7 +133,7 @@ yourprog.sql: yourprog.kwbp
 	    -e "s!@CGIURI@!$(CGIURI)!g" $< >$@
 
 yourprog: $(OBJS)
-	$(CC) $(STATIC) -o $@ $(OBJS) $(LDFLAGS) -lkcgi -lkcgijson -lz -lsqlbox -lsqlite3 -lm -lpthread
+	$(CC) $(STATIC) -o $@ $(OBJS) $(LDFLAGS)
 
 $(OBJS): extern.h
 
