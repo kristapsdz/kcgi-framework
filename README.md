@@ -1,9 +1,10 @@
 ## Synopsis
 
-kcgi-framework is a set of files for starting a
-[BCHS](https://learnbchs.org) project that uses
-[kcgi](https://kristaps.bsd.lv/kcgi) and
+kcgi-framework is a set of files for starting a [BCHS](https://learnbchs.org)
+project that uses [kcgi](https://kristaps.bsd.lv/kcgi) and
 [openradtool](https://kristaps.bsd.lv/openradtool).
+It assumes you're using the *latest available* of these tools, so if your
+operating system's package manager lags, you may need to install from source.
 
 The system, as is, minimally implements logging in and logging out over a
 session-based, RESTful JSON API.  It has lots of documentation:
