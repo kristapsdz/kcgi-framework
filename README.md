@@ -37,13 +37,8 @@ using the database documentation.
 
 Begin by reading the [Makefile](Makefile): it will list all of the
 variables you'll need to set for your installation.  Override these in a
-`Makefile.local`.  The default values assume an OpenBSD system with a
-stock install.   You'll probably need to set at least the following:
-
-```
-CPPFLAGS = -I/usr/local/include
-LDFLAGS = -L/usr/local/lib
-```
+*Makefile.local*.  The default values assume an OpenBSD system with a
+stock install.
 
 Then read the [main.c](main.c) and [yourprog.kwbp](yourprog.kwbp).
 The former drives the output of the latter when pushed through
@@ -96,8 +91,8 @@ hand-installation.  kcgi-framework includes the building blocks for an
 OpenBSD package by including necessary files.
 
 The port files exist in the [OpenBSD](openbsd) directory.  As-is, they
-will install the CGI script in `/var/www/cgi-bin` and the database and
-database specification in `/var/www/data`.
+will install the CGI script in */var/www/cgi-bin* and the database and
+database specification in */var/www/data*.
 
 The CGI script is installed with no permission bits.  This is because at
 initial installation, there's no database yet.  And on upgrade, the
@@ -105,7 +100,7 @@ database may not be in sync with the CGI script.
 
 To solve this, the package manager will run the `yourprog-upgrade`
 script, which generates the difference between the database
-specification for the existing database in `/var/www/data` with the
+specification for the existing database in */var/www/data* with the
 current version's specification.  It then patches the database and
 installs the current specification.  This keeps your database smoothly
 up to date.
