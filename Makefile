@@ -22,9 +22,10 @@ CGIURI = /cgi-bin/yourprog
 DATADIR = /var/www/data
 RDDIR = /data
 
-# If on a static architecture, set to -static; otherwise empty.
+# Uncomment this to disable -static linking.
+# This is set to -static by configure for supporting systems.
 
-STATIC = -static
+#LDADD_STATIC =
 
 # If on an HTTPS-only installation, should be "-DSECURE".
 
@@ -41,15 +42,15 @@ sinclude Makefile.local
 OBJS		 = compats.o db.o json.o valids.o main.o
 HTMLS		 = index.html
 JSMINS		 = index.min.js
-CFLAGS		+= `pkg-config --cflags sqlbox kcgi-json`
-# Linux systems may also need -lcrypt.
-LDFLAGS		+= `pkg-config --libs --static sqlbox kcgi-json`
-CPPFLAGS	+= -DDATADIR=\"$(RDDIR)\"
+DEPS_PKG	 = sqlbox kcgi-json
+STATIC_PKG	!= [ -z "$(LDADD_STATIC)" ] || echo "--static"
+CFLAGS_PKG	!= pkg-config --cflags $(DEPS_PKG)
+LDADD_PKG	!= pkg-config --libs $(STATIC_PKG) $(DEPS_PKG)
+
+CFLAGS		+= $(CFLAGS_PKG)
+LDADD		+= $(LDADD_PKG)
+CFLAGS		+= -DDATADIR=\"$(RDDIR)\"
 VERSION		 = 0.0.4
-
-# If on FreeBSD, which doesn't use CPPFLAGS.
-
-# CFLAGS	+= $(CPPFLAGS)
 
 all: yourprog yourprog.db yourprog-upgrade $(HTMLS) $(JSMINS)
 
@@ -133,7 +134,7 @@ yourprog.sql: yourprog.kwbp
 	    -e "s!@CGIURI@!$(CGIURI)!g" $< >$@
 
 yourprog: $(OBJS)
-	$(CC) $(STATIC) -o $@ $(OBJS) $(LDFLAGS)
+	$(CC) $(LDADD_STATIC) -o $@ $(OBJS) $(LDFLAGS) $(LDADD)
 
 $(OBJS): extern.h
 

@@ -40,6 +40,9 @@ main(void)
 }
 #endif /* TEST_CAPSICUM */
 #if TEST_ENDIAN_H
+#ifdef __linux__
+# define _DEFAULT_SOURCE
+#endif
 #include <endian.h>
 
 int
@@ -128,6 +131,18 @@ main(void)
 	return 0;
 }
 #endif /* TEST_INFTIM */
+#if TEST_LIB_SOCKET
+#include <sys/socket.h>
+
+int
+main(void)
+{
+	int fds[2], c;
+
+	c = socketpair(AF_UNIX, SOCK_STREAM, 0, fds);
+	return c == -1;
+}
+#endif /* TEST_LIB_SOCKET */
 #if TEST_MD5
 #include <sys/types.h>
 #include <md5.h>
@@ -135,9 +150,11 @@ main(void)
 int main(void)
 {
 	MD5_CTX ctx;
+	char result[MD5_DIGEST_STRING_LENGTH];
 
 	MD5Init(&ctx);
-	MD5Update(&ctx, "abcd", 4);
+	MD5Update(&ctx, (const unsigned char *)"abcd", 4);
+	MD5End(&ctx, result);
 
 	return 0;
 }
@@ -179,6 +196,33 @@ int main(void)
 	return 0;
 }
 #endif /* TEST_MEMSET_S */
+#if TEST_MKFIFOAT
+#include <sys/stat.h>
+#include <fcntl.h>
+
+int main(void) {
+	mkfifoat(AT_FDCWD, "this/path/should/not/exist", 0600);
+	return 0;
+}
+#endif /* TEST_MKFIFOAT */
+#if TEST_MKNODAT
+#include <sys/stat.h>
+#include <fcntl.h>
+
+int main(void) {
+	mknodat(AT_FDCWD, "this/path/should/not/exist", S_IFIFO | 0600, 0);
+	return 0;
+}
+#endif /* TEST_MKNODAT */
+#if TEST_OSBYTEORDER_H
+#include <libkern/OSByteOrder.h>
+
+int
+main(void)
+{
+	return !OSSwapHostToLittleInt32(23);
+}
+#endif /* TEST_OSBYTEORDER_H */
 #if TEST_PATH_MAX
 /*
  * POSIX allows PATH_MAX to not be defined, see
@@ -242,6 +286,9 @@ main(void)
 }
 #endif /* TEST_READPASSPHRASE */
 #if TEST_REALLOCARRAY
+#ifdef __NetBSD__
+# define _OPENBSD_SOURCE
+#endif
 #include <stdlib.h>
 
 int
@@ -287,6 +334,28 @@ main(void)
 	return(EFAULT == errno ? 0 : 1);
 }
 #endif /* TEST_SECCOMP_FILTER */
+#if TEST_SETRESGID
+#define _GNU_SOURCE /* linux */
+#include <sys/types.h>
+#include <unistd.h>
+
+int
+main(void)
+{
+	return setresgid(-1, -1, -1) == -1;
+}
+#endif /* TEST_SETRESGID */
+#if TEST_SETRESUID
+#define _GNU_SOURCE /* linux */
+#include <sys/types.h>
+#include <unistd.h>
+
+int
+main(void)
+{
+	return setresuid(-1, -1, -1) == -1;
+}
+#endif /* TEST_SETRESUID */
 #if TEST_SOCK_NONBLOCK
 /*
  * Linux doesn't (always?) have this.
@@ -302,6 +371,13 @@ main(void)
 	return 0;
 }
 #endif /* TEST_SOCK_NONBLOCK */
+#if TEST_STATIC
+int
+main(void)
+{
+	return 0; /* not meant to do anything */
+}
+#endif /* TEST_STATIC */
 #if TEST_STRLCAT
 #include <string.h>
 
@@ -366,7 +442,9 @@ main(void)
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-
+#ifdef __NetBSD__
+# define _OPENBSD_SOURCE
+#endif
 #include <stdlib.h>
 
 int
@@ -393,6 +471,34 @@ main(void)
 	return 0;
 }
 #endif /* TEST_STRTONUM */
+#if TEST_SYS_BYTEORDER_H
+#include <sys/byteorder.h>
+
+int
+main(void)
+{
+	return !LE_32(23);
+}
+#endif /* TEST_SYS_BYTEORDER_H */
+#if TEST_SYS_ENDIAN_H
+#include <sys/endian.h>
+
+int
+main(void)
+{
+	return !htole32(23);
+}
+#endif /* TEST_SYS_ENDIAN_H */
+#if TEST_SYS_MKDEV_H
+#include <sys/types.h>
+#include <sys/mkdev.h>
+
+int
+main(void)
+{
+	return !minor(0);
+}
+#endif /* TEST_SYS_MKDEV_H */
 #if TEST_SYS_QUEUE
 #include <sys/queue.h>
 #include <stddef.h>
@@ -423,6 +529,15 @@ main(void)
 	return 0;
 }
 #endif /* TEST_SYS_QUEUE */
+#if TEST_SYS_SYSMACROS_H
+#include <sys/sysmacros.h>
+
+int
+main(void)
+{
+	return !minor(0);
+}
+#endif /* TEST_SYS_SYSMACROS_H */
 #if TEST_SYS_TREE
 #include <sys/tree.h>
 #include <stdlib.h>
@@ -463,19 +578,6 @@ main(void)
 }
 
 #endif /* TEST_SYS_TREE */
-#if TEST_SYSTRACE
-#include <sys/param.h>
-#include <dev/systrace.h>
-
-#include <stdlib.h>
-
-int
-main(void)
-{
-
-	return(0);
-}
-#endif /* TEST_SYSTRACE */
 #if TEST_UNVEIL
 #include <unistd.h>
 
@@ -485,19 +587,14 @@ main(void)
 	return -1 != unveil(NULL, NULL);
 }
 #endif /* TEST_UNVEIL */
-#if TEST_ZLIB
-#include <stddef.h>
-#include <zlib.h>
+#if TEST_WAIT_ANY
+#include <sys/wait.h>
 
 int
 main(void)
 {
-	gzFile		 gz;
+	int st;
 
-	if (NULL == (gz = gzopen("/dev/null", "w")))
-		return(1);
-	gzputs(gz, "foo");
-	gzclose(gz);
-	return(0);
+	return waitpid(WAIT_ANY, &st, WNOHANG) != -1;
 }
-#endif /* TEST_ZLIB */
+#endif /* TEST_WAIT_ANY */
