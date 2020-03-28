@@ -15,7 +15,7 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-OCONFIGURE_VERSION="0.2.3"
+OCONFIGURE_VERSION="0.2.4"
 
 #
 # This script outputs two files: config.h and Makefile.configure.
@@ -65,6 +65,7 @@ CFLAGS="${CFLAGS} -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes"
 CFLAGS="${CFLAGS} -Wwrite-strings -Wno-unused-parameter"
 LDADD=
 LDADD_B64_NTOP=
+LDADD_CRYPT=
 LDADD_MD5=
 LDADD_LIB_SOCKET=
 LDADD_STATIC=
@@ -158,6 +159,7 @@ done
 HAVE_ARC4RANDOM=
 HAVE_B64_NTOP=
 HAVE_CAPSICUM=
+HAVE_CRYPT=
 HAVE_ENDIAN_H=
 HAVE_ERR=
 HAVE_EXPLICIT_BZERO=
@@ -320,6 +322,7 @@ runtest() {
 runtest arc4random	ARC4RANDOM			  || true
 runtest b64_ntop	B64_NTOP "" "" "-lresolv"	  || true
 runtest capsicum	CAPSICUM			  || true
+runtest crypt		CRYPT "" "" "-lcrypt"	  	  || true
 runtest endian_h	ENDIAN_H			  || true
 runtest err		ERR				  || true
 runtest explicit_bzero	EXPLICIT_BZERO			  || true
@@ -385,7 +388,7 @@ cat << __HEREDOC__
 #endif
 #if defined(__linux__) || defined(__MINT__)
 # define _GNU_SOURCE /* memmem, memrchr, setresuid... */
-# define _DEFAULT_SOURCE /* le32toh */
+# define _DEFAULT_SOURCE /* le32toh, crypt, ... */
 #endif
 #if defined(__NetBSD__)
 # define _OPENBSD_SOURCE /* reallocarray, etc. */
@@ -474,6 +477,7 @@ cat << __HEREDOC__
 #define HAVE_ARC4RANDOM ${HAVE_ARC4RANDOM}
 #define HAVE_B64_NTOP ${HAVE_B64_NTOP}
 #define HAVE_CAPSICUM ${HAVE_CAPSICUM}
+#define HAVE_CRYPT ${HAVE_CRYPT}
 #define HAVE_ENDIAN_H ${HAVE_ENDIAN_H}
 #define HAVE_ERR ${HAVE_ERR}
 #define HAVE_EXPLICIT_BZERO ${HAVE_EXPLICIT_BZERO}
@@ -2270,6 +2274,7 @@ CFLAGS		 = ${CFLAGS}
 CPPFLAGS	 = ${CPPFLAGS}
 LDADD		 = ${LDADD}
 LDADD_B64_NTOP	 = ${LDADD_B64_NTOP}
+LDADD_CRYPT	 = ${LDADD_CRYPT}
 LDADD_LIB_SOCKET = ${LDADD_LIB_SOCKET}
 LDADD_MD5	 = ${LDADD_MD5}
 LDADD_STATIC	 = ${LDADD_STATIC}

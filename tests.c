@@ -39,6 +39,30 @@ main(void)
 	return(0);
 }
 #endif /* TEST_CAPSICUM */
+#if TEST_CRYPT
+#if defined(__linux__)
+# define _GNU_SOURCE /* old glibc */
+# define _DEFAULT_SOURCE /* new glibc */
+#endif
+#if defined(__sun)
+# ifndef _XOPEN_SOURCE /* SunOS already defines */
+#  define _XOPEN_SOURCE /* XPGx */
+# endif
+# define _XOPEN_SOURCE_EXTENDED 1 /* XPG4v2 */
+# ifndef __EXTENSIONS__ /* SunOS already defines */
+#  define __EXTENSIONS__ /* reallocarray, etc. */
+# endif
+#endif
+#include <unistd.h>
+
+int main(void)
+{
+	char	*v;
+
+	v = crypt("this_is_a_key", "123455");
+	return v == NULL;
+}
+#endif /* TEST_CRYPT */
 #if TEST_ENDIAN_H
 #ifdef __linux__
 # define _DEFAULT_SOURCE

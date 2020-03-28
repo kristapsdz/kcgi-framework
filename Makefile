@@ -48,7 +48,7 @@ CFLAGS_PKG	!= pkg-config --cflags $(DEPS_PKG)
 LDADD_PKG	!= pkg-config --libs $(STATIC_PKG) $(DEPS_PKG)
 
 CFLAGS		+= $(CFLAGS_PKG)
-LDADD		+= $(LDADD_PKG)
+LDADD		+= $(LDADD_PKG) $(LDADD_CRYPT)
 CFLAGS		+= -DDATADIR=\"$(RDDIR)\"
 VERSION		 = 0.0.4
 
