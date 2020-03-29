@@ -1,4 +1,4 @@
-.SUFFIXES: .html .in.xml .xml .js .min.js .db .sql .png
+.SUFFIXES: .html .in.xml .xml .js .min.js .db .sql
 .PHONY: clean distclean
 
 include Makefile.configure
@@ -31,7 +31,7 @@ RDDIR = /data
 
 SECURE = -DSECURE
 
-# File-system path where Swagger API is installed.
+# File-system path where OAS API is installed.
 
 APIDOCS = /var/www/htdocs/api-docs
 
@@ -54,7 +54,7 @@ VERSION		 = 0.0.4
 
 all: yourprog yourprog.db yourprog-upgrade $(HTMLS) $(JSMINS)
 
-api: swagger.json schema.png schema.html
+api: swagger.json
 
 yourprog-upgrade: yourprog-upgrade.in.sh
 	sed -e "s!@DATADIR@!$(DATADIR)!g" \
@@ -83,7 +83,7 @@ installwww: all
 
 installapi: api
 	mkdir -p $(APIDOCS)
-	$(INSTALL_DATA) schema.html schema.png swagger.json $(APIDOCS)
+	$(INSTALL_DATA) swagger.json $(APIDOCS)
 
 updatecgi: all
 	mkdir -p $(CGIBIN)
@@ -97,17 +97,11 @@ installcgi: updatecgi
 
 clean:
 	rm -f yourprog yourprog-upgrade $(HTMLS) $(JSMINS) $(OBJS) yourprog.db
-	rm -f swagger.json schema.html schema.png 
+	rm -f swagger.json 
 	rm -f db.c json.c valids.c extern.h yourprog.sql
 
 distclean: clean
 	rm -f config.log config.h Makefile.configure
-
-schema.html: yourprog.sql
-	sqliteconvert yourprog.sql >$@
-
-schema.png: yourprog.sql
-	sqliteconvert -i yourprog.sql >$@
 
 db.c: yourprog.ort
 	ort-c-source -Idvj -h extern.h yourprog.ort >$@
