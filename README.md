@@ -1,78 +1,89 @@
 ## Synopsis
 
-kcgi-framework is a set of files for starting a [BCHS](https://learnbchs.org)
-project that uses [kcgi](https://kristaps.bsd.lv/kcgi) and
+**kcgi-framework** is a set of file priming a [BCHS](https://learnbchs.org)
+project using [kcgi](https://kristaps.bsd.lv/kcgi) and
 [openradtool](https://kristaps.bsd.lv/openradtool).
-It assumes you're using the *latest available* of these tools, so if your
-operating system's package manager lags, you may need to install from source.
 
-The system, as is, minimally implements logging in and logging out over a
-session-based, RESTful JSON API.  It has lots of documentation:
+The framework implements logging in and logging out over a session-based,
+RESTful JSON API.  It includes the full application stack:
 
-- initial database documentation via
-  [sqliteconvert](https://kristaps.bsd.lv/sqliteconvert)
-- RESTful documentation via [Swagger](https://swagger.io)
-- well-documented C and JS source code
+- database initialisation
+- database interface (C language)
+- REST interface (JSON)
+- front-end formatting (JavaScript)
+
+It also includes a skeleton [port](https://man.openbsd.org/ports) for
+[OpenBSD](https://www.openbsd.org).
 
 The existing code tries to follow best practises for all elements of the
-stack: clean ([style(9)](https://man.openbsd.org/style.9)), secure C code
-that's logically separated, HTML and JavaScript that are well-formed and
-satisfy CSP policies, and so on.
+stack: clean ([style(9)](https://man.openbsd.org/style.9)), secure C
+code that's logically separated, HTML and JavaScript that are
+well-formed and satisfy CSP policies, and so on.
 
-It's also portable within UNIX systems as provided by
-[oconfigure](https://github.com/kristapsdz/oconfigure).
+All parts are documented as fully as possible, from the database schema
+to the REST API.
 
-You'll only use this repository once as a primer for your project.  It's
-not something that's installed.  I use this to quickly get started on a
-project without needing to re-implement basis user management.
+The framework is portable for most modern UNIX systems as provided by
+[oconfigure](https://github.com/kristapsdz/oconfigure).  This includes
+OpenBSD, NetBSD, FreeBSD, Linux, Mac OS X, Solaris, and IllumOS.
+
+You'll only use this framework *once* for your project---it's not
+something that's installed.
 
 ## Installation
 
-This is a framework (or foundation), so you'll use this to get your
-project started.  Begin by copying all files into your project
-directory.  You'll also need [kcgi](https://kristaps.bsd.lv/kcgi),
-[openradtool](https://kristaps.bsd.lv/openradtool), and
-[sqliteconvert](https://kristaps.bsd.lv/sqliteconvert) if you plan on
-using the database documentation.
+You'll need an up-to-date [kcgi](https://kristaps.bsd.lv/kcgi) and
+[openradtool](https://kristaps.bsd.lv/openradtool).
 
-Begin by reading the [Makefile](Makefile): it will list all of the
-variables you'll need to set for your installation.  Override these in a
-*Makefile.local*.  The default values assume an OpenBSD system with a
-stock install.
+1. Copy all files into your project directory.
 
-Then read the [main.c](main.c) and [yourprog.ort](yourprog.ort).
-The former drives the output of the latter when pushed through
-[openradtool](https://kristaps.bsd.lv/openradtool) in various ways.
+   Then read and edit the [Makefile](Makefile): it will list all of the
+   variables you'll need to set for your installation.  Override these
+   in a *Makefile.local* or directly in the Makefile.
 
-Finally, read [index.xml](index.xml) and [index.js](index.js), both of
-which drive the JSON backend.  It's all super-simple and self-contained.
-([openradtool](https://kristaps.bsd.lv/openradtool) can also provide
-this, but I erred on the side of simplicity.)
+2. Review [yourprog.ort](yourprog.ort).  This describes your data model
+   and how data passes into and from the database.  Its syntax is
+   documented in
+   [ort(5)](https://kristaps.bsd.lv/openradtool/ort.5.html).
 
-(You should probably use [TypeScript](https://www.typescriptlang.org/)
+3. Browse [main.c](main.c).  It uses the interfaces created by
+   [ort-c-header(1)](https://kristaps.bsd.lv/openradtool/ort-c-header.1.html)
+   to drive the REST API.
+
+4.  Read [index.xml](index.xml) and [index.js](index.js), both of
+    which interface the REST API.
+
+You should probably use [TypeScript](https://www.typescriptlang.org/)
 instead of JavaScript, but I'm keeping this simple.  Realistically that
-only means installing the compiler, adding some TypeScript to JavaScript
-in the Makefile, and that's it.)
+only means installing the TypeScript compiler, adding some TypeScript to
+JavaScript in the Makefile, and that's it.
 
-Before running `make`, you'll need to run `./configure` to generate the
-compatibility layer.
+Then deploy in the usual way:
 
-The current [Makefile](Makefile) rules are as follows.
+```
+% ./configure
+% make
+# make install
+```
 
-Run `make` to compile the sources.
+There are several additional targets:
 
-Run `make installwww` to install the HTML and JS sources.
+- `installwww`: only HTML and JS sources
 
-Run `make installapi` to install the Swagger RESTful documentation.
+- `installapi`: REST [OAS2.0](https://www.openapis.org/) API docs
 
-Run `make installcgi` to install the CGI script and a fresh copy of the
-database.  *Warning*: this will replace the existing database.
+- `installcgi`: CGI script and a fresh copy of the database
+  (**warning**: this will replace the existing database)
 
-Run `make updatecgi` to install only the CGI script.
+- `updatecgi`: install only the CGI script
 
-If you want to create a user to play with, use
+## Users
+
+If you want to create a user, use
 [encrypt(1)](https://man.openbsd.org/encrypt.1) to generate a password
 hash and insert those into the database prior to `make installcgi`.
+(The hashing method depends upon the operating system.)
+
 Assuming a user `foo@bar.com` and substituting `yourpassword` for your
 password and `yourhash` for the output of the encryption:
 
@@ -84,11 +95,12 @@ sqlite> insert into user values ('foo@bar.com', 'yourhash', 1);
 sqlite> .quit
 ```
 
+You can also run this on your live database, of course.
+
 ## Package management
 
-Most of my CGI scripts are managed by a package manager, not by
-hand-installation.  kcgi-framework includes the building blocks for an
-OpenBSD package by including necessary files.
+**kcgi-framework** includes the building blocks for an OpenBSD
+[port](https://man.openbsd.org/ports.7) by including necessary files.
 
 The port files exist in the [OpenBSD](openbsd) directory.  As-is, they
 will install the CGI script in */var/www/cgi-bin* and the database and
