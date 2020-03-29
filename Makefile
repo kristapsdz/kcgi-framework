@@ -67,12 +67,12 @@ install: all
 	mkdir -p $(DESTDIR)$(CGIBIN)
 	mkdir -p $(DESTDIR)$(HTDOCS)
 	$(INSTALL_DATA) $(HTMLS) $(JSMINS) $(DESTDIR)$(HTDOCS)
-	$(INSTALL_DATA) yourprog.kwbp $(DESTDIR)$(SHAREDIR)/yourprog
+	$(INSTALL_DATA) yourprog.ort $(DESTDIR)$(SHAREDIR)/yourprog
 	$(INSTALL_PROGRAM) yourprog $(DESTDIR)$(CGIBIN)
 	$(INSTALL_PROGRAM) yourprog-upgrade $(DESTDIR)$(SBINDIR)
 
 uninstall:
-	rm -f $(DESTDIR)$(SHAREDIR)/yourprog/yourprog.kwbp
+	rm -f $(DESTDIR)$(SHAREDIR)/yourprog/yourprog.ort
 	rmdir $(DESTDIR)$(SHAREDIR)/yourprog
 	rm -f $(DESTDIR)$(CGIBIN)/yourprog
 	rm -f $(DESTDIR)$(SBINDIR)/yourprog-upgrade
@@ -109,20 +109,20 @@ schema.html: yourprog.sql
 schema.png: yourprog.sql
 	sqliteconvert -i yourprog.sql >$@
 
-db.c: yourprog.kwbp
-	ort-c-source -Idvj -h extern.h yourprog.kwbp >$@
+db.c: yourprog.ort
+	ort-c-source -Idvj -h extern.h yourprog.ort >$@
 
-json.c: yourprog.kwbp
-	ort-c-source -Idvj -j -Nd -h extern.h yourprog.kwbp >$@
+json.c: yourprog.ort
+	ort-c-source -Idvj -j -Nd -h extern.h yourprog.ort >$@
 
-valids.c: yourprog.kwbp
-	ort-c-source -Idvj -v -Nd -h extern.h yourprog.kwbp >$@
+valids.c: yourprog.ort
+	ort-c-source -Idvj -v -Nd -h extern.h yourprog.ort >$@
 
-extern.h: yourprog.kwbp
-	ort-c-header -jv yourprog.kwbp >$@
+extern.h: yourprog.ort
+	ort-c-header -jv yourprog.ort >$@
 
-yourprog.sql: yourprog.kwbp
-	ort-sql yourprog.kwbp >$@
+yourprog.sql: yourprog.ort
+	ort-sql yourprog.ort >$@
 
 .sql.db:
 	@rm -f $@

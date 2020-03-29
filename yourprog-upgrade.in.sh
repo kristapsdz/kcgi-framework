@@ -1,6 +1,6 @@
 #! /bin/sh
 
-KWBP="@SHAREDIR@/yourprog/yourprog.kwbp"
+ORT="@SHAREDIR@/yourprog/yourprog.ort"
 
 args=`getopt f: $*`
 if [ $? -ne 0 ]
@@ -13,7 +13,7 @@ while [ $# -ne 0 ]
 do
 	case "$1" in
 	-f)
-		KWBP="$2"; shift; shift;;
+		ORT="$2"; shift; shift;;
 	--)
 		shift; break;;
         esac
@@ -26,14 +26,14 @@ then
 	set -e
 	mkdir -p "@DATADIR@"
 	echo "@DATADIR@/yourprog.db: installing new"
-	ort-sql "$KWBP" | sqlite3 "@DATADIR@/yourprog.db"
+	ort-sql "$ORT" | sqlite3 "@DATADIR@/yourprog.db"
 	chown www "@DATADIR@/yourprog.db"
 	chmod 600 "@DATADIR@/yourprog.db"
-	install -m 0444 "$KWBP" "@DATADIR@/yourprog.kwbp"
+	install -m 0444 "$ORT" "@DATADIR@/yourprog.ort"
 	exit 0
 fi
 
-cmp -s "$KWBP" "@DATADIR@/yourprog.kwbp"
+cmp -s "$ORT" "@DATADIR@/yourprog.ort"
 if [ $? -eq 0 ]
 then
 	echo "@DATADIR@/yourprog.db: already up to date"
@@ -47,7 +47,7 @@ trap "rm -f $TMPFILE" ERR EXIT
 echo "@DATADIR@/yourprog.db: patching existing"
 
 ( echo "BEGIN EXCLUSIVE TRANSACTION;" ; \
-  ort-sqldiff "@DATADIR@/yourprog.kwbp"  "$KWBP" ; \
+  ort-sqldiff "@DATADIR@/yourprog.ort"  "$ORT" ; \
   echo "COMMIT TRANSACTION;" ; ) > $TMPFILE
 
 if [ $? -ne 0 ]
@@ -57,6 +57,6 @@ then
 fi
 
 sqlite3 "@DATADIR@/yourprog.db" < $TMPFILE
-install -m 0444 "$KWBP" "@DATADIR@/yourprog.kwbp"
+install -m 0444 "$ORT" "@DATADIR@/yourprog.ort"
 rm -f "@DATADIR@/yourprog-upgrade.sql"
 echo "@DATADIR@/yourprog.db: patch success"

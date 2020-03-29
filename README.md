@@ -40,7 +40,7 @@ variables you'll need to set for your installation.  Override these in a
 *Makefile.local*.  The default values assume an OpenBSD system with a
 stock install.
 
-Then read the [main.c](main.c) and [yourprog.kwbp](yourprog.kwbp).
+Then read the [main.c](main.c) and [yourprog.ort](yourprog.ort).
 The former drives the output of the latter when pushed through
 [openradtool](https://kristaps.bsd.lv/openradtool) in various ways.
 
