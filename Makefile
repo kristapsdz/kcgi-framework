@@ -1,5 +1,5 @@
 .SUFFIXES: .html .in.xml .xml .js .min.js .db .sql
-.PHONY: clean distclean
+.PHONY: clean distclean regress distcheck
 
 include Makefile.configure
 
@@ -94,6 +94,12 @@ installcgi: updatecgi
 	rm -f $(DATADIR)/yourprog.db
 	install -m 666 yourprog.db $(DATADIR)
 	chmod 0777 $(DATADIR)
+
+regress:
+	# Do nothing.
+
+distcheck:
+	# Do nothing.
 
 clean:
 	rm -f yourprog yourprog-upgrade $(HTMLS) $(JSMINS) $(OBJS) yourprog.db
