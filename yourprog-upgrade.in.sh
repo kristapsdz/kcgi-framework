@@ -2,13 +2,13 @@
 
 ORT="@SHAREDIR@/yourprog/yourprog.ort"
 
-args=`getopt f: $*`
+args=$(getopt f: $*)
 if [ $? -ne 0 ]
 then
 	echo 'Usage: ...'
 	exit 2
 fi
-set -- $args
+set -- "$args"
 while [ $# -ne 0 ]
 do
 	case "$1" in
@@ -29,7 +29,7 @@ then
 	ort-sql "$ORT" | sqlite3 "@DATADIR@/yourprog.db"
 	chown www "@DATADIR@/yourprog.db"
 	chmod 600 "@DATADIR@/yourprog.db"
-	install -m 0444 "$ORT" "@DATADIR@/yourprog.ort"
+	install -m 0400 "$ORT" "@DATADIR@/yourprog.ort"
 	exit 0
 fi
 
@@ -41,14 +41,14 @@ then
 fi
 
 set -e
-TMPFILE=`mktemp` || exit 1
-trap "rm -f $TMPFILE" ERR EXIT
+TMPFILE=$(mktemp) || exit 1
+trap "rm -f $TMPFILE" 0
 
 echo "@DATADIR@/yourprog.db: patching existing"
 
 ( echo "BEGIN EXCLUSIVE TRANSACTION;" ; \
   ort-sqldiff "@DATADIR@/yourprog.ort"  "$ORT" ; \
-  echo "COMMIT TRANSACTION;" ; ) > $TMPFILE
+  echo "COMMIT TRANSACTION;" ; ) > "$TMPFILE"
 
 if [ $? -ne 0 ]
 then
@@ -56,7 +56,7 @@ then
 	exit 1
 fi
 
-sqlite3 "@DATADIR@/yourprog.db" < $TMPFILE
-install -m 0444 "$ORT" "@DATADIR@/yourprog.ort"
+sqlite3 "@DATADIR@/yourprog.db" < "$TMPFILE"
+install -m 0400 "$ORT" "@DATADIR@/yourprog.ort"
 rm -f "@DATADIR@/yourprog-upgrade.sql"
 echo "@DATADIR@/yourprog.db: patch success"
