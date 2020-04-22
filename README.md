@@ -102,20 +102,17 @@ You can also run this on your live database, of course.
 **kcgi-framework** includes the building blocks for an OpenBSD
 [port](https://man.openbsd.org/ports.7) by including necessary files.
 
-The port files exist in the [OpenBSD](openbsd) directory.  As-is, they
-will install the CGI script in */var/www/cgi-bin* and the database and
-database specification in */var/www/data*.
+The port is in the [OpenBSD](openbsd) directory.  As-is, it installs the
+CGI script in */var/www/cgi-bin* and the database and database
+specification in */var/www/data*.
 
-The CGI script is installed with no permission bits.  This is because at
-initial installation, there's no database yet.  And on upgrade, the
-database may not be in sync with the CGI script.
+The port uses the `yourprog-upgrade` script, which generates the
+difference between the database specification for the existing database
+in */var/www/data* with the current version's specification.  It then
+patches the database and installs the current specification.  This keeps
+your database smoothly up to date.
 
-To solve this, the package manager will run the `yourprog-upgrade`
-script, which generates the difference between the database
-specification for the existing database in */var/www/data* with the
-current version's specification.  It then patches the database and
-installs the current specification.  This keeps your database smoothly
-up to date.
+It's possible to embed this directly into the port *PLIST*, if desired.
 
 Of course, this is something you'll need to carefully test!  It uses
 [ort-sqldiff(1)](https://kristaps.bsd.lv/openradtool/ort-sqldiff.1.html),
