@@ -4,22 +4,43 @@ struct user {
 	field hash password;
 	field id int rowid;
 
-	search email, hash: name creds;
+	search email, hash: name creds
+		comment "Search for the user by their email address and
+			 password (which is hashed of course).  This is
+			 how the login sequence typically works.";
 
-	update email: id: name email;
-	update hash: id: name pass;
+	update email: id: name email
+		comment "Change the user's email address.";
+	update hash: id: name pass
+		comment "Change the user's password.";
+
+	comment "The operator of this application.";
 };
 
 struct sess {
 	field user struct userid;
 	field userid:user.id int;
-	field token int;
+	field token int
+		comment "Random cookie value.  This makes it so that
+			 adversaries can't guess predictable session id
+			 values and hijack other sessions.";
 	field id int rowid;
 
-	delete id, token: name id;
+	delete id, token: name id
+		comment "Delete a session.  In a real app, it's not
+			 likely that one will delete anything, opting
+			 for a delete-time or similar field, but this
+			 keeps things simple.";
 
 	insert;
 
-	search id, token: name creds;
+	search id, token: name creds
+		comment "Search for the session by its unique identifier
+			 pair.  This is how browsers look up their
+			 current session.";
+
+	comment "This is a browser session.  Browsers identify their
+		 session with the id, which is guessable, and the token,
+		 which is not.";
 };
 
