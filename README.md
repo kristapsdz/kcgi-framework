@@ -89,11 +89,14 @@ password and `yourhash` for the output of the encryption:
 
 ```sh
 % make
-% echo 'yourpassword' | encrypt
+% printf 'yourpassword' | encrypt
 % sqlite3 yourprog.db
 sqlite> insert into user values ('foo@bar.com', 'yourhash', 1);
 sqlite> .quit
 ```
+
+The `printf` instead of `echo` is so that the trailing newline is not
+considered part of the password.
 
 You can also run this on your live database, of course.
 
