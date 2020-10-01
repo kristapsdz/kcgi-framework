@@ -178,7 +178,7 @@ sendlogin(struct kreq *r)
 #endif
 
 	sid = db_sess_insert(r->arg, u->id, token);
-	kutil_epoch2str
+	khttp_epoch2str
 		(time(NULL) + 60 * 60 * 24 * 365,
 		 buf, sizeof(buf));
 #ifdef SECURE
@@ -208,7 +208,7 @@ sendlogout(struct kreq *r, const struct sess *s)
 	const char	*secure;
 	char		 buf[32];
 
-	kutil_epoch2str(0, buf, sizeof(buf));
+	khttp_epoch2str(0, buf, sizeof(buf));
 #ifdef SECURE
 	secure = " secure;";
 #else
